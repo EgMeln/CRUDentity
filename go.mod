@@ -3,6 +3,7 @@ module EgMeln/CRUDentity
 go 1.17
 
 require (
+	github.com/caarlos0/env/v6 v6.9.1 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.10.1 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -11,6 +12,7 @@ require (
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
 	github.com/jackc/pgtype v1.9.1 // indirect
 	github.com/jackc/pgx/v4 v4.14.1 // indirect
+	github.com/jackc/puddle v1.2.0 // indirect
 	github.com/labstack/echo/v4 v4.6.3 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect
