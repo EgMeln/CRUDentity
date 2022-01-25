@@ -1,31 +1,24 @@
 package repository
 
 import (
-	"EgMeln/CRUDentity/internal/config"
 	"EgMeln/CRUDentity/internal/model"
 	"context"
-	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"log"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type Postgres struct {
-	pool *pgxpool.Pool
+	Pool *pgxpool.Pool
+}
+
+type Mongo struct {
+	CollectionParkingLot *mongo.Collection
 }
 
 type ParkingLots interface {
-	CreateRecord(lot *model.ParkingLot)
-	ReadAllRecords() []*model.ParkingLot
-	ReadRecordByNum(num int) *model.ParkingLot
-	UpdateRecord(num int, inParking bool, remark string)
-	DeleteRecord(num int)
-}
-
-func NewRepository(cfg *config.Config) *Postgres {
-	cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.DBName)
-	pool, err := pgxpool.Connect(context.Background(), cfg.DBURL)
-	if err != nil {
-		log.Fatalf("Error connection to DB: %v", err)
-	}
-	return &Postgres{pool: pool}
+	AddParkingLot(e context.Context, lot *model.ParkingLot) error
+	GetAllParkingLots(e context.Context) ([]*model.ParkingLot, error)
+	GetParkingLotByNum(e context.Context, num int) (*model.ParkingLot, error)
+	UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error
+	DeleteParkingLot(e context.Context, num int) error
 }

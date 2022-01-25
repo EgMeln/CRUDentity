@@ -3,35 +3,38 @@ package service
 import (
 	"EgMeln/CRUDentity/internal/model"
 	"EgMeln/CRUDentity/internal/repository"
+	"context"
+	"reflect"
 )
 
 type ParkingService struct {
-	Conn *repository.Postgres
+	Conn repository.ParkingLots
 }
 
-type ParkingLots interface {
-	CreateRecord(lot *model.ParkingLot)
-	ReadAllRecord() []*model.ParkingLot
-	ReadRecordByNum(num int) *model.ParkingLot
-	UpdateRecord(num int, inParking bool, remark string)
-	DeleteRecord(num int)
+func NewService(Rep interface{}) *ParkingService {
+	var postgres *repository.Postgres
+	var mongo *repository.Mongo
+	switch reflect.TypeOf(Rep) {
+	case reflect.TypeOf(postgres):
+		return &ParkingService{Conn: Rep.(*repository.Postgres)}
+	case reflect.TypeOf(mongo):
+		return &ParkingService{Conn: Rep.(*repository.Mongo)}
+	}
+	return nil
 }
 
-func New(Rep *repository.Postgres) *ParkingService {
-	return &ParkingService{Conn: Rep}
+func (srv *ParkingService) AddParkingLot(e context.Context, lot *model.ParkingLot) error {
+	return srv.Conn.AddParkingLot(e, lot)
 }
-func (srv *ParkingService) CreateRecord(lot *model.ParkingLot) {
-	srv.Conn.CreateRecord(lot)
+func (srv *ParkingService) GetAllParkingLots(e context.Context) ([]*model.ParkingLot, error) {
+	return srv.Conn.GetAllParkingLots(e)
 }
-func (srv *ParkingService) ReadAllRecord() []*model.ParkingLot {
-	return srv.Conn.ReadAllRecords()
+func (srv *ParkingService) GetParkingLotByNum(e context.Context, num int) (*model.ParkingLot, error) {
+	return srv.Conn.GetParkingLotByNum(e, num)
 }
-func (srv *ParkingService) ReadRecordByNum(num int) *model.ParkingLot {
-	return srv.Conn.ReadRecordByNum(num)
+func (srv *ParkingService) UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error {
+	return srv.Conn.UpdateParkingLot(e, num, inParking, remark)
 }
-func (srv *ParkingService) UpdateRecord(num int, inParking bool, remark string) {
-	srv.Conn.UpdateRecord(num, inParking, remark)
-}
-func (srv *ParkingService) DeleteRecord(num int) {
-	srv.Conn.DeleteRecord(num)
+func (srv *ParkingService) DeleteParkingLot(e context.Context, num int) error {
+	return srv.Conn.DeleteParkingLot(e, num)
 }
