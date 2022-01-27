@@ -24,7 +24,7 @@ func main() {
 	var parkingService *service.ParkingService
 	switch cfg.DB {
 	case "postgres":
-		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBName)
+		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Printf("DB URL: %s", cfg.DBURL)
 		pool, err := pgxpool.Connect(context.Background(), cfg.DBURL)
 		if err != nil {
@@ -34,13 +34,13 @@ func main() {
 		parkingService = service.NewService(&repository.Postgres{Pool: pool})
 
 	case "mongodb":
-		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.Host, cfg.PortMongo)
+		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
 		log.Printf("DB URL: %s", cfg.DBURL)
 		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(cfg.DBURL))
 		if err != nil {
 			log.Fatalf("Error connection to DB: %v", err)
 		}
-		db := client.Database(cfg.DBName)
+		db := client.Database(cfg.DBNameMongo)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
 				log.Fatalf("Error connection to DB: %v", err)
@@ -60,5 +60,5 @@ func main() {
 	e.GET("/park/:num", parkingHandler.GetParkingLotByNum)
 	e.PUT("/change/:num", parkingHandler.UpdateParkingLot)
 	e.DELETE("/delete/:num", parkingHandler.DeleteParkingLot)
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":8080"))
 }
