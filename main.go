@@ -1,12 +1,12 @@
 package main
 
 import (
-	"EgMeln/CRUDentity/internal/config"
-	"EgMeln/CRUDentity/internal/handlers"
-	"EgMeln/CRUDentity/internal/repository"
-	"EgMeln/CRUDentity/internal/service"
 	"context"
 	"fmt"
+	"github.com/EgMeln/CRUDentity/internal/config"
+	"github.com/EgMeln/CRUDentity/internal/handlers"
+	"github.com/EgMeln/CRUDentity/internal/repository"
+	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -31,7 +31,7 @@ func main() {
 			log.Fatalf("Error connection to DB: %v", err)
 		}
 		defer pool.Close()
-		parkingService = service.NewService(&repository.Postgres{Pool: pool})
+		parkingService = service.NewServicePostgres(&repository.Postgres{Pool: pool})
 
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
@@ -46,7 +46,7 @@ func main() {
 				log.Fatalf("Error connection to DB: %v", err)
 			}
 		}()
-		parkingService = service.NewService(&repository.Mongo{CollectionParkingLot: db.Collection("egormelnikov")})
+		parkingService = service.NewServiceMongo(&repository.Mongo{CollectionParkingLot: db.Collection("egormelnikov")})
 	}
 
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
@@ -55,10 +55,10 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.POST("/users", parkingHandler.AddParkingLot)
-	e.GET("/park", parkingHandler.GetAllParkingLots)
-	e.GET("/park/:num", parkingHandler.GetParkingLotByNum)
-	e.PUT("/change/:num", parkingHandler.UpdateParkingLot)
-	e.DELETE("/delete/:num", parkingHandler.DeleteParkingLot)
+	e.POST("/users", parkingHandler.Add)
+	e.GET("/park", parkingHandler.GetAll)
+	e.GET("/park/:num", parkingHandler.GetByNum)
+	e.PUT("/change/:num", parkingHandler.Update)
+	e.DELETE("/delete/:num", parkingHandler.Delete)
 	e.Logger.Fatal(e.Start(":8080"))
 }

@@ -1,40 +1,46 @@
 package service
 
 import (
-	"EgMeln/CRUDentity/internal/model"
-	"EgMeln/CRUDentity/internal/repository"
 	"context"
-	"reflect"
+	"github.com/EgMeln/CRUDentity/internal/model"
+	"github.com/EgMeln/CRUDentity/internal/repository"
 )
 
 type ParkingService struct {
-	Conn repository.ParkingLots
+	conn repository.ParkingLots
 }
 
-func NewService(Rep interface{}) *ParkingService {
-	var postgres *repository.Postgres
-	var mongo *repository.Mongo
-	switch reflect.TypeOf(Rep) {
-	case reflect.TypeOf(postgres):
-		return &ParkingService{Conn: Rep.(*repository.Postgres)}
-	case reflect.TypeOf(mongo):
-		return &ParkingService{Conn: Rep.(*repository.Mongo)}
-	}
-	return nil
+func NewServicePostgres(rep *repository.Postgres) *ParkingService {
+	return &ParkingService{conn: rep}
+}
+func NewServiceMongo(rep *repository.Mongo) *ParkingService {
+	return &ParkingService{conn: rep}
 }
 
-func (srv *ParkingService) AddParkingLot(e context.Context, lot *model.ParkingLot) error {
-	return srv.Conn.AddParkingLot(e, lot)
+//func NewService(rep interface{}) *ParkingService {
+//	var postgres *repository.Postgres
+//	var mongo *repository.Mongo
+//	switch reflect.TypeOf(rep) {
+//	case reflect.TypeOf(postgres):
+//		return &ParkingService{conn: rep.(*repository.Postgres)}
+//	case reflect.TypeOf(mongo):
+//		return &ParkingService{conn: rep.(*repository.Mongo)}
+//	}
+//	return nil
+//}
+
+func (srv *ParkingService) Add(e context.Context, lot *model.ParkingLot) error {
+	return srv.conn.Add(e, lot)
 }
-func (srv *ParkingService) GetAllParkingLots(e context.Context) ([]*model.ParkingLot, error) {
-	return srv.Conn.GetAllParkingLots(e)
+func (srv *ParkingService) GetAll(e context.Context) ([]*model.ParkingLot, error) {
+	return srv.conn.GetAll(e)
 }
-func (srv *ParkingService) GetParkingLotByNum(e context.Context, num int) (*model.ParkingLot, error) {
-	return srv.Conn.GetParkingLotByNum(e, num)
+func (srv *ParkingService) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
+	return srv.conn.GetByNum(e, num)
 }
-func (srv *ParkingService) UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error {
-	return srv.Conn.UpdateParkingLot(e, num, inParking, remark)
+func (srv *ParkingService) Update(e context.Context, num int, inParking bool, remark string) error {
+	return srv.conn.Update(e, num, inParking, remark)
 }
-func (srv *ParkingService) DeleteParkingLot(e context.Context, num int) error {
-	return srv.Conn.DeleteParkingLot(e, num)
+func (srv *ParkingService) Delete(e context.Context, num int) error {
+	return srv.conn.Delete(e, num)
 }

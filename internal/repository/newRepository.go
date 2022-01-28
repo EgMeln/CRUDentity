@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"EgMeln/CRUDentity/internal/model"
 	"context"
+	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -16,9 +16,9 @@ type Mongo struct {
 }
 
 type ParkingLots interface {
-	AddParkingLot(e context.Context, lot *model.ParkingLot) error
-	GetAllParkingLots(e context.Context) ([]*model.ParkingLot, error)
-	GetParkingLotByNum(e context.Context, num int) (*model.ParkingLot, error)
-	UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error
-	DeleteParkingLot(e context.Context, num int) error
+	Add(e context.Context, lot *model.ParkingLot) error
+	GetAll(e context.Context) ([]*model.ParkingLot, error)
+	GetByNum(e context.Context, num int) (*model.ParkingLot, error)
+	Update(e context.Context, num int, inParking bool, remark string) error
+	Delete(e context.Context, num int) error
 }

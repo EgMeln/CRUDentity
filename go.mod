@@ -1,4 +1,4 @@
-module EgMeln/CRUDentity
+module github.com/EgMeln/CRUDentity
 
 go 1.17
 
