@@ -22,6 +22,7 @@ func main() {
 	}
 
 	var parkingService *service.ParkingService
+	var userService *service.UserService
 	switch cfg.DB {
 	case "postgres":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
@@ -31,8 +32,8 @@ func main() {
 			log.Fatalf("Error connection to DB: %v", err)
 		}
 		defer pool.Close()
-		parkingService = service.NewServicePostgres(&repository.Postgres{Pool: pool})
-
+		parkingService = service.NewParkingLotServicePostgres(&repository.Postgres{Pool: pool})
+		userService = service.NewUserServicePostgres(&repository.Postgres{Pool: pool})
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
 		log.Printf("DB URL: %s", cfg.DBURL)
@@ -46,19 +47,26 @@ func main() {
 				log.Fatalf("Error connection to DB: %v", err)
 			}
 		}()
-		parkingService = service.NewServiceMongo(&repository.Mongo{CollectionParkingLot: db.Collection("egormelnikov")})
+		parkingService = service.NewParkingLotServiceMongo(&repository.Mongo{CollectionParkingLot: db.Collection("egormelnikov")})
+		userService = service.NewUserServiceMongo(&repository.Mongo{CollectionUsers: db.Collection("users")})
 	}
-
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
-
+	userHandler := handlers.NewServiceUser(userService)
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.POST("/users", parkingHandler.Add)
+	e.POST("/park", parkingHandler.Add)
 	e.GET("/park", parkingHandler.GetAll)
 	e.GET("/park/:num", parkingHandler.GetByNum)
-	e.PUT("/change/:num", parkingHandler.Update)
-	e.DELETE("/delete/:num", parkingHandler.Delete)
+	e.PUT("/park/:num", parkingHandler.Update)
+	e.DELETE("/park/:num", parkingHandler.Delete)
+
+	e.POST("/users", userHandler.Add)
+	e.GET("/users", userHandler.GetAll)
+	e.GET("/users/:username", userHandler.Get)
+	e.PUT("/users/:username", userHandler.Update)
+	e.DELETE("/users/:username", userHandler.Delete)
+
 	e.Logger.Fatal(e.Start(":8080"))
 }

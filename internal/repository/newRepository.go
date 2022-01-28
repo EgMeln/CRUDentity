@@ -13,12 +13,20 @@ type Postgres struct {
 
 type Mongo struct {
 	CollectionParkingLot *mongo.Collection
+	CollectionUsers      *mongo.Collection
 }
 
 type ParkingLots interface {
-	Add(e context.Context, lot *model.ParkingLot) error
-	GetAll(e context.Context) ([]*model.ParkingLot, error)
-	GetByNum(e context.Context, num int) (*model.ParkingLot, error)
-	Update(e context.Context, num int, inParking bool, remark string) error
-	Delete(e context.Context, num int) error
+	AddParkingLot(e context.Context, lot *model.ParkingLot) error
+	GetAllParkingLot(e context.Context) ([]*model.ParkingLot, error)
+	GetByNumParkingLot(e context.Context, num int) (*model.ParkingLot, error)
+	UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error
+	DeleteParkingLot(e context.Context, num int) error
+}
+type Users interface {
+	AddUser(e context.Context, lot *model.User) error
+	GetAllUser(e context.Context) ([]*model.User, error)
+	GetUser(e context.Context, username string) (*model.User, error)
+	UpdateUser(e context.Context, username string, password string, admin bool) error
+	DeleteUser(e context.Context, username string) error
 }
