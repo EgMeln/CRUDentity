@@ -30,3 +30,8 @@ type Users interface {
 	UpdateUser(e context.Context, username string, password string, admin bool) error
 	DeleteUser(e context.Context, username string) error
 }
+
+type Authentication interface {
+	SignUp(e context.Context, user *model.User) error
+	SignIn(e context.Context, user *model.User) (string, string, error)
+}

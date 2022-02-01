@@ -1,0 +1,49 @@
+package service
+
+import (
+	"context"
+	"crypto/sha1"
+	"fmt"
+	"github.com/EgMeln/CRUDentity/internal/model"
+	"github.com/EgMeln/CRUDentity/internal/repository"
+)
+
+type AuthenticationService struct {
+	conn         repository.Users
+	accessToken  *JWTService
+	refreshToken *JWTService
+	hashSalt     string
+}
+
+func NewAuthenticationServicePostgres(rep *repository.Postgres, access, refresh *JWTService, hashSalt string) *AuthenticationService {
+	return &AuthenticationService{conn: rep, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
+}
+func NewAuthenticationServiceMongo(rep *repository.Mongo, access, refresh *JWTService, hashSalt string) *AuthenticationService {
+	return &AuthenticationService{conn: rep, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
+}
+
+func (srv *AuthenticationService) SignUp(e context.Context, user *model.User) error {
+	_, err := srv.conn.GetUser(e, user.Username)
+	if err != nil {
+		return srv.conn.AddUser(e, user)
+	}
+
+	return fmt.Errorf("can't insert user %w", err)
+}
+
+func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (string, string, error) {
+	pwd := sha1.New()
+	pwd.Write([]byte(user.Password))
+	pwd.Write([]byte(srv.hashSalt))
+	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
+
+	userSignIn, err := srv.conn.GetUser(e, user.Username)
+	if err != nil {
+		return "", "", fmt.Errorf("can't get user %w", err)
+	}
+	if user.Password != userSignIn.Password {
+		return "", "", fmt.Errorf("wrong password %w", err)
+	}
+
+	return GenerateRefreshAccessToken(srv.accessToken, srv.refreshToken, user)
+}

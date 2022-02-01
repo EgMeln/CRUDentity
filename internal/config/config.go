@@ -16,6 +16,12 @@ type Config struct {
 	DBNameMongo    string `env:"DBNAMEMONGO" envDefault:"egormelnikovdb"`
 	DBNamePostgres string `env:"DBNAMEPOSTGRES" envDefault:"egormelnikovdb"`
 	DBURL          string `env:"DBURL" envDefault:""`
+
+	AccessToken          string `env:"ACCESSTOKEN" envDefault:""`
+	RefreshToken         string `env:"REFRESHTOKEN" envDefault:""`
+	AccessTokenLifeTime  int    `env:"ACCESSLIFETIME" envDefault:"1800"`
+	RefreshTokenLifeTime int    `env:"REFRESHLIFETOKEN" envDefault:"518400"`
+	HashSalt             string `env:"HASHSALT" envDefault:"HASHSALT"`
 }
 
 func New() (*Config, error) {

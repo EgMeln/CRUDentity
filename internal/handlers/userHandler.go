@@ -14,17 +14,7 @@ type UserHandler struct {
 func NewServiceUser(srv *service.UserService) UserHandler {
 	return UserHandler{service: srv}
 }
-func (handler *UserHandler) Add(e echo.Context) (err error) {
-	user := new(model.User)
-	if err = e.Bind(user); err != nil {
-		return e.JSON(http.StatusBadRequest, user)
-	}
-	err = handler.service.Add(e.Request().Context(), &model.User{Username: user.Username, Password: user.Password, Admin: user.Admin})
-	if err != nil {
-		return e.JSON(http.StatusBadRequest, user)
-	}
-	return e.JSON(http.StatusOK, user)
-}
+
 func (handler *UserHandler) GetAll(e echo.Context) error {
 	users, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
