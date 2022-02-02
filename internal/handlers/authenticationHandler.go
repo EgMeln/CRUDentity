@@ -34,11 +34,12 @@ func (handler *AuthenticationHandler) SignIn(e echo.Context) error {
 	if err := e.Bind(user); err != nil {
 		return e.JSON(http.StatusBadRequest, user)
 	}
-	accessToken, refreshToken, err := handler.service.SignIn(e.Request().Context(), &model.User{Username: user.Username, Password: user.Password, Admin: user.Admin})
+
+	accessToken, refreshToken, err := handler.service.SignIn(e.Request().Context(), user)
 
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		return e.JSON(http.StatusBadRequest, fmt.Sprintf("error with tokens"))
 	}
 
-	return e.JSON(http.StatusOK, fmt.Sprintf("access token %s, refresh token %s ", accessToken, refreshToken))
+	return e.JSON(http.StatusOK, fmt.Sprintf("access token %s, refresh token %s", accessToken, refreshToken))
 }

@@ -23,6 +23,11 @@ func NewAuthenticationServiceMongo(rep *repository.Mongo, access, refresh *JWTSe
 }
 
 func (srv *AuthenticationService) SignUp(e context.Context, user *model.User) error {
+	pwd := sha1.New()
+	pwd.Write([]byte(user.Password))
+	pwd.Write([]byte(srv.hashSalt))
+	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
+
 	_, err := srv.conn.GetUser(e, user.Username)
 	if err != nil {
 		return srv.conn.AddUser(e, user)
@@ -39,10 +44,10 @@ func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (s
 
 	userSignIn, err := srv.conn.GetUser(e, user.Username)
 	if err != nil {
-		return "", "", fmt.Errorf("can't get user %w", err)
+		return "", "", fmt.Errorf("error witn get user %w", err)
 	}
 	if user.Password != userSignIn.Password {
-		return "", "", fmt.Errorf("wrong password %w", err)
+		return "", "", fmt.Errorf("error witn password %w", err)
 	}
 
 	return GenerateRefreshAccessToken(srv.accessToken, srv.refreshToken, user)

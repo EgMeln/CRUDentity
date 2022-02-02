@@ -19,7 +19,7 @@ func NewJWTService(key []byte, tokenLifeTime time.Duration) *JWTService {
 }
 
 func GenerateToken(jwtService *JWTService, user *model.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, &model.Claim{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.Claim{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(jwtService.TokenLifeTime).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -29,38 +29,25 @@ func GenerateToken(jwtService *JWTService, user *model.User) (string, error) {
 	})
 	tokenString, err := token.SignedString(jwtService.Key)
 	if err != nil {
-		return "", fmt.Errorf("can't generate token %w", err)
+		return "", err
 	}
 	return tokenString, nil
 }
+
 func GenerateRefreshAccessToken(access *JWTService, refresh *JWTService, user *model.User) (string, string, error) {
-	accessToke, err := GenerateToken(access, user)
+	accessToken, err := GenerateToken(access, user)
 	if err != nil {
-		return "", "", fmt.Errorf("can't create access token %w", err)
+		return "", "", fmt.Errorf("error witn acces token %w", err)
 	}
 	refreshToken, err := GenerateToken(refresh, user)
+
 	if err != nil {
-		return "", "", fmt.Errorf("can't create refresh token %w", err)
+		return "", "", fmt.Errorf("error witn refresh token %w", err)
 	}
-	return accessToke, refreshToken, nil
+
+	return accessToken, refreshToken, nil
 }
 
-func (JWTService *JWTService) ParseToken(accessToken string) (*model.Claim, error) {
-	token, err := jwt.ParseWithClaims(accessToken, &model.Claim{}, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method")
-		}
-		return JWTService.Key, nil
-	})
-	if err != nil {
-		return nil, fmt.Errorf("invalid token: %w", err)
-	}
-	claims, ok := token.Claims.(*model.Claim)
-	if !ok {
-		return nil, fmt.Errorf("invalid token claims")
-	}
-	return claims, nil
-}
 func CheckAccess(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(e echo.Context) error {
 		if e.Get("user") == nil {
@@ -73,5 +60,41 @@ func CheckAccess(next echo.HandlerFunc) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusNotAcceptable, "have no access")
 		}
 		return next(e)
+	}
+}
+
+func TokenRefresh(access, refresh *JWTService) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if c.Get("user") == nil {
+				return next(c)
+			}
+			u := c.Get("user").(*jwt.Token)
+
+			claims := u.Claims.(*model.Claim)
+
+			if time.Until(time.Unix(claims.ExpiresAt, 0)) < 6*time.Minute {
+				if refresh.Key != nil {
+					// Parses token and checks if it valid.
+					tkn, err := jwt.ParseWithClaims(string(refresh.Key), claims, func(token *jwt.Token) (interface{}, error) {
+						return refresh.Key, nil
+					})
+					if err != nil {
+						if err == jwt.ErrSignatureInvalid {
+							c.Response().Writer.WriteHeader(http.StatusUnauthorized)
+						}
+					}
+
+					if tkn != nil && tkn.Valid {
+						// If everything is good, update tokens.
+						_, _, _ = GenerateRefreshAccessToken(access, refresh, &model.User{
+							Username: claims.Username,
+							Admin:    claims.Admin,
+						})
+					}
+				}
+			}
+			return next(c)
+		}
 	}
 }

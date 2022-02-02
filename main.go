@@ -23,8 +23,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Config error: ", cfg)
 	}
-	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime))
-	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime))
+	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime)*time.Second)
+	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime)*time.Second)
 
 	var parkingService *service.ParkingService
 	var userService *service.UserService
@@ -70,21 +70,11 @@ func main() {
 	e.POST("/auth/sign-in", authenticationHandler.SignIn)
 	e.POST("/auth/sign-up", authenticationHandler.SignUp)
 	admin := e.Group("/admin")
-	configuration := middleware.JWTConfig{Claims: &model.Claim{}, SigningKey: cfg.AccessToken}
-	//e.Use(middleware.JWTWithConfig(configuration))
-	//e.Use(service.CheckAccess)
-	//e.POST("/park", parkingHandler.Add)
-	//e.GET("/park", parkingHandler.GetAll)
-	//e.GET("/park/:num", parkingHandler.GetByNum)
-	//e.PUT("/park/:num", parkingHandler.Update)
-	//e.DELETE("/park/:num", parkingHandler.Delete)
-	//
-	//e.GET("/users", userHandler.GetAll)
-	//e.GET("/users/:username", userHandler.Get)
-	//e.PUT("/users/:username", userHandler.Update)
-	//e.DELETE("/users/:username", userHandler.Delete)
+	configuration := middleware.JWTConfig{Claims: &model.Claim{}, SigningKey: []byte(cfg.AccessToken)}
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(service.CheckAccess)
+	admin.Use(service.TokenRefresh(access, refresh))
+
 	admin.POST("/park", parkingHandler.Add)
 	admin.PUT("/park/:num", parkingHandler.Update)
 	admin.DELETE("/park/:num", parkingHandler.Delete)
@@ -95,6 +85,7 @@ func main() {
 
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
+	user.Use(service.TokenRefresh(access, refresh))
 	user.GET("/park", parkingHandler.GetAll)
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))

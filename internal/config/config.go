@@ -17,8 +17,8 @@ type Config struct {
 	DBNamePostgres string `env:"DBNAMEPOSTGRES" envDefault:"egormelnikovdb"`
 	DBURL          string `env:"DBURL" envDefault:""`
 
-	AccessToken          string `env:"ACCESSTOKEN" envDefault:""`
-	RefreshToken         string `env:"REFRESHTOKEN" envDefault:""`
+	AccessToken          string `env:"ACCESSTOKEN" envDefault:"access_key"`
+	RefreshToken         string `env:"REFRESHTOKEN" envDefault:"refresh_key"`
 	AccessTokenLifeTime  int    `env:"ACCESSLIFETIME" envDefault:"1800"`
 	RefreshTokenLifeTime int    `env:"REFRESHLIFETOKEN" envDefault:"518400"`
 	HashSalt             string `env:"HASHSALT" envDefault:"HASHSALT"`
