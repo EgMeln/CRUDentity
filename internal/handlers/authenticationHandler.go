@@ -44,3 +44,16 @@ func (handler *AuthenticationHandler) SignIn(e echo.Context) error {
 
 	return e.JSON(http.StatusOK, fmt.Sprintf("access token %s, refresh token %s", accessToken, refreshToken))
 }
+func (handler *AuthenticationHandler) Refresh(e echo.Context) error {
+	user := new(request.RefreshToken)
+	if err := e.Bind(user); err != nil {
+		return e.JSON(http.StatusBadRequest, user)
+	}
+
+	accessToken, refreshToken, err := handler.service.RefreshToken(e.Request().Context(), &model.User{Username: user.Username, Admin: user.Admin})
+	if err != nil {
+		return e.JSON(http.StatusBadRequest, fmt.Sprintf("error with tokens"))
+	}
+
+	return e.JSON(http.StatusOK, fmt.Sprintf("new access token <%s>, new refresh token <%s>", accessToken, refreshToken))
+}

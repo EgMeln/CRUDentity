@@ -39,9 +39,9 @@ func main() {
 			log.Fatalf("Error connection to DB: %v", err)
 		}
 		defer pool.Close()
-		parkingService = service.NewParkingLotServicePostgres(&repository.Postgres{Pool: pool})
-		userService = service.NewUserServicePostgres(&repository.Postgres{Pool: pool})
-		authenticationService = service.NewAuthenticationServicePostgres(&repository.Postgres{Pool: pool}, access, refresh, cfg.HashSalt)
+		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
+		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
+		authenticationService = service.NewAuthenticationServicePostgres(&repository.PostgresUser{PoolUser: pool}, &repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
 		log.Printf("DB URL: %s", cfg.DBURL)
@@ -55,9 +55,9 @@ func main() {
 				log.Fatalf("Error connection to DB: %v", err)
 			}
 		}()
-		parkingService = service.NewParkingLotServiceMongo(&repository.Mongo{CollectionParkingLot: db.Collection("egormelnikov")})
-		userService = service.NewUserServiceMongo(&repository.Mongo{CollectionUsers: db.Collection("users")})
-		authenticationService = service.NewAuthenticationServiceMongo(&repository.Mongo{CollectionUsers: db.Collection("users")}, access, refresh, cfg.HashSalt)
+		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
+		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
+		authenticationService = service.NewAuthenticationServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")}, &repository.MongoToken{CollectionTokens: db.Collection("tokens")}, access, refresh, cfg.HashSalt)
 	}
 
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
@@ -75,8 +75,6 @@ func main() {
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(middlewares.CheckAccess)
 
-	admin.Use(middlewares.TokenRefresh(access, refresh))
-
 	admin.POST("/park", parkingHandler.Add)
 	admin.PUT("/park/:num", parkingHandler.Update)
 	admin.DELETE("/park/:num", parkingHandler.Delete)
@@ -86,7 +84,8 @@ func main() {
 	admin.DELETE("/users/:username", userHandler.Delete)
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
-	user.Use(middlewares.TokenRefresh(access, refresh))
+
+	user.POST("/refresh", authenticationHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))

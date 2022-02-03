@@ -21,3 +21,7 @@ type UpdateUser struct {
 	Password string `json:"password" form:"password"`
 	Admin    bool   `json:"admin" form:"admin"`
 }
+type RefreshToken struct {
+	Username string `json:"username" form:"username"`
+	Admin    bool   `json:"admin" form:"admin"`
+}

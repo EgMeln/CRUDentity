@@ -6,16 +6,16 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/model"
 )
 
-func (rep *Postgres) AddParkingLot(e context.Context, lot *model.ParkingLot) error {
-	_, err := rep.Pool.Exec(e, "INSERT INTO parking (num,inparking,remark) VALUES ($1,$2,$3)", lot.Num, lot.InParking, lot.Remark)
+func (rep *PostgresParking) Add(e context.Context, lot *model.ParkingLot) error {
+	_, err := rep.PoolParking.Exec(e, "INSERT INTO parking (num,inparking,remark) VALUES ($1,$2,$3)", lot.Num, lot.InParking, lot.Remark)
 	if err != nil {
 		return fmt.Errorf("can't create parking lot %w", err)
 	}
 	return err
 }
 
-func (rep *Postgres) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, error) {
-	rows, err := rep.Pool.Query(e, "SELECT * FROM parking")
+func (rep *PostgresParking) GetAll(e context.Context) ([]*model.ParkingLot, error) {
+	rows, err := rep.PoolParking.Query(e, "SELECT * FROM parking")
 	if err != nil {
 		return nil, fmt.Errorf("can't select all parking lot %w", err)
 	}
@@ -35,25 +35,25 @@ func (rep *Postgres) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, e
 	return lots, err
 }
 
-func (rep *Postgres) GetByNumParkingLot(e context.Context, num int) (*model.ParkingLot, error) {
+func (rep *PostgresParking) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
 	var lot model.ParkingLot
-	err := rep.Pool.QueryRow(e, "SELECT num,inparking, remark from parking where num=$1", num).Scan(&lot.Num, &lot.InParking, &lot.Remark)
+	err := rep.PoolParking.QueryRow(e, "SELECT num,inparking, remark from parking where num=$1", num).Scan(&lot.Num, &lot.InParking, &lot.Remark)
 	if err != nil {
 		return nil, fmt.Errorf("can't select parking lot %w", err)
 	}
 	return &lot, err
 }
 
-func (rep *Postgres) UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error {
-	_, err := rep.Pool.Exec(e, "UPDATE parking SET inparking =$1,remark =$2 WHERE num = $3", inParking, remark, num)
+func (rep *PostgresParking) Update(e context.Context, num int, inParking bool, remark string) error {
+	_, err := rep.PoolParking.Exec(e, "UPDATE parking SET inparking =$1,remark =$2 WHERE num = $3", inParking, remark, num)
 	if err != nil {
 		return fmt.Errorf("can't update parking lot %w", err)
 	}
 	return err
 }
 
-func (rep *Postgres) DeleteParkingLot(e context.Context, num int) error {
-	row, err := rep.Pool.Exec(e, "DELETE FROM parking where num=$1", num)
+func (rep *PostgresParking) Delete(e context.Context, num int) error {
+	row, err := rep.PoolParking.Exec(e, "DELETE FROM parking where num=$1", num)
 	if err != nil {
 		return fmt.Errorf("can't delete parking lot %w", err)
 	}

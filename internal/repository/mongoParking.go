@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (rep *Mongo) AddParkingLot(e context.Context, lot *model.ParkingLot) error {
+func (rep *MongoParking) Add(e context.Context, lot *model.ParkingLot) error {
 	_, err := rep.CollectionParkingLot.InsertOne(e, lot)
 	if err != nil {
 		return fmt.Errorf("can't create parking lot %w", err)
@@ -16,7 +16,7 @@ func (rep *Mongo) AddParkingLot(e context.Context, lot *model.ParkingLot) error 
 	return err
 }
 
-func (rep *Mongo) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, error) {
+func (rep *MongoParking) GetAll(e context.Context) ([]*model.ParkingLot, error) {
 	rows, err := rep.CollectionParkingLot.Find(e, bson.M{})
 	if err != nil {
 		return nil, fmt.Errorf("can't select all parking lot %w", err)
@@ -36,7 +36,7 @@ func (rep *Mongo) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, erro
 	return lots, err
 }
 
-func (rep *Mongo) GetByNumParkingLot(e context.Context, num int) (*model.ParkingLot, error) {
+func (rep *MongoParking) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
 	var lot model.ParkingLot
 	err := rep.CollectionParkingLot.FindOne(e, bson.M{"num": num}).Decode(&lot)
 	if err == mongo.ErrNoDocuments {
@@ -47,7 +47,7 @@ func (rep *Mongo) GetByNumParkingLot(e context.Context, num int) (*model.Parking
 	return &lot, err
 }
 
-func (rep *Mongo) UpdateParkingLot(e context.Context, num int, inParking bool, remark string) error {
+func (rep *MongoParking) Update(e context.Context, num int, inParking bool, remark string) error {
 	_, err := rep.CollectionParkingLot.UpdateOne(e, bson.M{"num": num}, bson.M{"$set": bson.M{"inparking": inParking, "remark": remark}})
 	if err != nil {
 		return fmt.Errorf("can't update parking lot %w", err)
@@ -55,7 +55,7 @@ func (rep *Mongo) UpdateParkingLot(e context.Context, num int, inParking bool, r
 	return err
 }
 
-func (rep *Mongo) DeleteParkingLot(e context.Context, num int) error {
+func (rep *MongoParking) Delete(e context.Context, num int) error {
 	row, err := rep.CollectionParkingLot.DeleteOne(e, bson.M{"num": num})
 	if err != nil {
 		return fmt.Errorf("can't delete parking lot %w", err)
