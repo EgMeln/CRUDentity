@@ -18,6 +18,7 @@ func (rep *Postgres) GetAllUser(e context.Context) ([]*model.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't select all users %w", err)
 	}
+	defer rows.Close()
 	var users []*model.User
 	for rows.Next() {
 		var user model.User
@@ -30,6 +31,7 @@ func (rep *Postgres) GetAllUser(e context.Context) ([]*model.User, error) {
 		user.Admin = values[2].(bool)
 		users = append(users, &user)
 	}
+
 	return users, err
 }
 func (rep *Postgres) GetUser(e context.Context, username string) (*model.User, error) {

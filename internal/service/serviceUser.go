@@ -31,3 +31,9 @@ func (srv *UserService) Update(e context.Context, username string, password stri
 func (srv *UserService) Delete(e context.Context, username string) error {
 	return srv.conn.DeleteUser(e, username)
 }
+func (srv *UserService) AddToken(e context.Context, username string, tokenStr string) error {
+	return srv.conn.AddToken(e, username, tokenStr)
+}
+func (srv *UserService) GetToken(e context.Context, username string) (string, error) {
+	return srv.conn.GetToken(e, username)
+}

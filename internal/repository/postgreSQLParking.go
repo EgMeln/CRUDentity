@@ -19,6 +19,7 @@ func (rep *Postgres) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, e
 	if err != nil {
 		return nil, fmt.Errorf("can't select all parking lot %w", err)
 	}
+	defer rows.Close()
 	var lots []*model.ParkingLot
 	for rows.Next() {
 		var lot model.ParkingLot

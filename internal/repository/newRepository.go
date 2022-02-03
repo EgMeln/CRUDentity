@@ -14,6 +14,7 @@ type Postgres struct {
 type Mongo struct {
 	CollectionParkingLot *mongo.Collection
 	CollectionUsers      *mongo.Collection
+	CollectionTokens     *mongo.Collection
 }
 
 type ParkingLots interface {
@@ -29,6 +30,8 @@ type Users interface {
 	GetUser(e context.Context, username string) (*model.User, error)
 	UpdateUser(e context.Context, username string, password string, admin bool) error
 	DeleteUser(e context.Context, username string) error
+	AddToken(e context.Context, username string, token string) error
+	GetToken(e context.Context, username string) (string, error)
 }
 
 type Authentication interface {

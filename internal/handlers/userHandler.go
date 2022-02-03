@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/EgMeln/CRUDentity/internal/model"
+	"github.com/EgMeln/CRUDentity/internal/request"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -34,7 +35,7 @@ func (handler *UserHandler) Get(e echo.Context) error {
 }
 func (handler *UserHandler) Update(e echo.Context) error {
 	username := e.Param("username")
-	c := new(model.User)
+	c := new(request.UpdateUser)
 	if err := e.Bind(c); err != nil {
 		return err
 	}

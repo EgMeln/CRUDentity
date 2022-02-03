@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/handlers"
+	"github.com/EgMeln/CRUDentity/internal/middlewares"
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
 	"github.com/EgMeln/CRUDentity/internal/service"
@@ -72,8 +73,9 @@ func main() {
 	admin := e.Group("/admin")
 	configuration := middleware.JWTConfig{Claims: &model.Claim{}, SigningKey: []byte(cfg.AccessToken)}
 	admin.Use(middleware.JWTWithConfig(configuration))
-	admin.Use(service.CheckAccess)
-	admin.Use(service.TokenRefresh(access, refresh))
+	admin.Use(middlewares.CheckAccess)
+
+	admin.Use(middlewares.TokenRefresh(access, refresh))
 
 	admin.POST("/park", parkingHandler.Add)
 	admin.PUT("/park/:num", parkingHandler.Update)
@@ -82,10 +84,9 @@ func main() {
 	admin.GET("/users/:username", userHandler.Get)
 	admin.PUT("/users/:username", userHandler.Update)
 	admin.DELETE("/users/:username", userHandler.Delete)
-
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
-	user.Use(service.TokenRefresh(access, refresh))
+	user.Use(middlewares.TokenRefresh(access, refresh))
 	user.GET("/park", parkingHandler.GetAll)
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))

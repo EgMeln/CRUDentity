@@ -21,6 +21,7 @@ func (rep *Mongo) GetAllParkingLot(e context.Context) ([]*model.ParkingLot, erro
 	if err != nil {
 		return nil, fmt.Errorf("can't select all parking lot %w", err)
 	}
+	defer rows.Close(e)
 	var lots []*model.ParkingLot
 	for rows.Next(e) {
 		lot := new(model.ParkingLot)

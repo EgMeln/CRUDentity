@@ -20,6 +20,7 @@ func (rep *Mongo) GetAllUser(e context.Context) ([]*model.User, error) {
 	if err != nil {
 		return nil, fmt.Errorf("can't select all users %w", err)
 	}
+	defer rows.Close(e)
 	var users []*model.User
 	for rows.Next(e) {
 		lot := new(model.User)
