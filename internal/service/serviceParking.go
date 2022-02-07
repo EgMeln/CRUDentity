@@ -1,37 +1,34 @@
 package service
 
 import (
-	"EgMeln/CRUDentity/internal/model"
-	"EgMeln/CRUDentity/internal/repository"
+	"context"
+	"github.com/EgMeln/CRUDentity/internal/model"
+	"github.com/EgMeln/CRUDentity/internal/repository"
 )
 
 type ParkingService struct {
-	Conn *repository.Postgres
+	conn repository.ParkingLots
 }
 
-type ParkingLots interface {
-	CreateRecord(lot *model.ParkingLot)
-	ReadAllRecord() []*model.ParkingLot
-	ReadRecordByNum(num int) *model.ParkingLot
-	UpdateRecord(num int, inParking bool, remark string)
-	DeleteRecord(num int)
+func NewParkingLotServicePostgres(rep *repository.PostgresParking) *ParkingService {
+	return &ParkingService{conn: rep}
+}
+func NewParkingLotServiceMongo(rep *repository.MongoParking) *ParkingService {
+	return &ParkingService{conn: rep}
 }
 
-func New(Rep *repository.Postgres) *ParkingService {
-	return &ParkingService{Conn: Rep}
+func (srv *ParkingService) Add(e context.Context, lot *model.ParkingLot) error {
+	return srv.conn.Add(e, lot)
 }
-func (srv *ParkingService) CreateRecord(lot *model.ParkingLot) {
-	srv.Conn.CreateRecord(lot)
+func (srv *ParkingService) GetAll(e context.Context) ([]*model.ParkingLot, error) {
+	return srv.conn.GetAll(e)
 }
-func (srv *ParkingService) ReadAllRecord() []*model.ParkingLot {
-	return srv.Conn.ReadAllRecords()
+func (srv *ParkingService) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
+	return srv.conn.GetByNum(e, num)
 }
-func (srv *ParkingService) ReadRecordByNum(num int) *model.ParkingLot {
-	return srv.Conn.ReadRecordByNum(num)
+func (srv *ParkingService) Update(e context.Context, num int, inParking bool, remark string) error {
+	return srv.conn.Update(e, num, inParking, remark)
 }
-func (srv *ParkingService) UpdateRecord(num int, inParking bool, remark string) {
-	srv.Conn.UpdateRecord(num, inParking, remark)
-}
-func (srv *ParkingService) DeleteRecord(num int) {
-	srv.Conn.DeleteRecord(num)
+func (srv *ParkingService) Delete(e context.Context, num int) error {
+	return srv.conn.Delete(e, num)
 }
