@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"net/http"
+	"time"
+
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/handlers"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
@@ -14,9 +18,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"log"
-	"net/http"
-	"time"
 )
 
 func main() {
@@ -34,36 +35,49 @@ func main() {
 	case "postgres":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Printf("DB URL: %s", cfg.DBURL)
-		pool, err := pgxpool.Connect(context.Background(), cfg.DBURL)
-		if err != nil {
-			log.Fatalf("Error connection to DB: %v", err)
-		}
-		defer pool.Close()
+		pool := connectPostgres(cfg.DBURL)
 		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
-		authenticationService = service.NewAuthenticationServicePostgres(&repository.PostgresUser{PoolUser: pool}, &repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
+		authenticationService = service.NewAuthServicePostgres(&repository.PostgresUser{PoolUser: pool}, &repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
 		log.Printf("DB URL: %s", cfg.DBURL)
-		client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(cfg.DBURL))
-		if err != nil {
-			log.Fatalf("Error connection to DB: %v", err)
-		}
-		db := client.Database(cfg.DBNameMongo)
+		client, db := connectMongo(cfg.DBURL, cfg.DBNameMongo)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
-				log.Fatalf("Error connection to DB: %v", err)
+				log.Printf("Error connection to DB: %v", err)
 			}
 		}()
 		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
-		authenticationService = service.NewAuthenticationServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")}, &repository.MongoToken{CollectionTokens: db.Collection("tokens")}, access, refresh, cfg.HashSalt)
+		repMongoUsers := &repository.MongoUser{CollectionUsers: db.Collection("users")}
+		repMongoTokens := &repository.MongoToken{CollectionTokens: db.Collection("tokens")}
+		authenticationService = service.NewAuthServiceMongo(repMongoUsers, repMongoTokens, access, refresh, cfg.HashSalt)
 	}
 
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
 	userHandler := handlers.NewServiceUser(userService)
 	authenticationHandler := handlers.NewServiceAuthentication(authenticationService)
 
+	runEcho(&parkingHandler, &userHandler, &authenticationHandler, cfg)
+}
+func connectPostgres(URL string) *pgxpool.Pool {
+	pool, err := pgxpool.Connect(context.Background(), URL)
+	if err != nil {
+		log.Printf("Error connection to DB: %v", err)
+	}
+	defer pool.Close()
+	return pool
+}
+func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
+	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(URL))
+	if err != nil {
+		log.Printf("Error connection to DB: %v", err)
+	}
+	db := client.Database(DBName)
+	return client, db
+}
+func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, authenticationHandler *handlers.AuthenticationHandler, cfg *config.Config) *echo.Echo {
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
@@ -89,4 +103,5 @@ func main() {
 	user.GET("/park", parkingHandler.GetAll)
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))
+	return e
 }

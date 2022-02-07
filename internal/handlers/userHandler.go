@@ -1,21 +1,26 @@
+// Package handlers contain function for handling request
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/request"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
+// UserHandler struct that contain repository linc
 type UserHandler struct {
 	service *service.UserService
 }
 
+// NewServiceUser add new authentication handler
 func NewServiceUser(srv *service.UserService) UserHandler {
 	return UserHandler{service: srv}
 }
 
+// GetAll getting all users
 func (handler *UserHandler) GetAll(e echo.Context) error {
 	users, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
@@ -23,6 +28,8 @@ func (handler *UserHandler) GetAll(e echo.Context) error {
 	}
 	return e.JSON(http.StatusOK, users)
 }
+
+// Get getting parking lot by username
 func (handler *UserHandler) Get(e echo.Context) error {
 	username := e.Param("username")
 	var user *model.User
@@ -33,6 +40,8 @@ func (handler *UserHandler) Get(e echo.Context) error {
 	}
 	return e.JSON(http.StatusOK, user)
 }
+
+// Update updating user
 func (handler *UserHandler) Update(e echo.Context) error {
 	username := e.Param("username")
 	c := new(request.UpdateUser)
@@ -45,6 +54,8 @@ func (handler *UserHandler) Update(e echo.Context) error {
 	}
 	return e.JSON(http.StatusOK, c)
 }
+
+// Delete deleting user
 func (handler *UserHandler) Delete(e echo.Context) error {
 	username := e.Param("username")
 	var err error

@@ -1,22 +1,26 @@
 package handlers
 
 import (
+	"net/http"
+	"strconv"
+
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/request"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/labstack/echo/v4"
-	"net/http"
-	"strconv"
 )
 
+// ParkingLotHandler struct that contain repository linc
 type ParkingLotHandler struct {
 	service *service.ParkingService
 }
 
+// NewServiceParkingLot add new authentication handler
 func NewServiceParkingLot(srv *service.ParkingService) ParkingLotHandler {
 	return ParkingLotHandler{service: srv}
 }
 
+// Add record about parking lot
 func (handler *ParkingLotHandler) Add(e echo.Context) (err error) {
 	c := new(request.ParkingLotCreate)
 	if err = e.Bind(c); err != nil {
@@ -29,6 +33,7 @@ func (handler *ParkingLotHandler) Add(e echo.Context) (err error) {
 	return e.JSON(http.StatusOK, c)
 }
 
+// GetAll getting all parking lots
 func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 	parkingLots, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
@@ -37,6 +42,7 @@ func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 	return e.JSON(http.StatusOK, parkingLots)
 }
 
+// GetByNum getting parking lot by num
 func (handler *ParkingLotHandler) GetByNum(e echo.Context) error {
 	num, err := strconv.Atoi(e.Param("num"))
 	if err != nil {
@@ -50,13 +56,14 @@ func (handler *ParkingLotHandler) GetByNum(e echo.Context) error {
 	return e.JSON(http.StatusOK, parkingLot)
 }
 
+// Update updating parking lot
 func (handler *ParkingLotHandler) Update(e echo.Context) error {
-	num, err := strconv.Atoi(e.Param("num"))
-	if err != nil {
+	c := new(request.ParkingLotUpdate)
+	if err := e.Bind(c); err != nil {
 		return err
 	}
-	c := new(request.ParkingLotUpdate)
-	if err = e.Bind(c); err != nil {
+	num, err := strconv.Atoi(e.Param("num"))
+	if err != nil {
 		return err
 	}
 	err = handler.service.Update(e.Request().Context(), num, c.InParking, c.Remark)
@@ -66,6 +73,7 @@ func (handler *ParkingLotHandler) Update(e echo.Context) error {
 	return e.JSON(http.StatusOK, c)
 }
 
+// Delete deleting parking lot
 func (handler *ParkingLotHandler) Delete(e echo.Context) error {
 	num, err := strconv.Atoi(e.Param("num"))
 	if err != nil {

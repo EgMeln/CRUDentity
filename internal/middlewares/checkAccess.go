@@ -1,12 +1,15 @@
+// Package middlewares for JWT
 package middlewares
 
 import (
+	"net/http"
+
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
+// CheckAccess for checking roll Admin
 func CheckAccess(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(e echo.Context) error {
 		if e.Get("user") == nil {
