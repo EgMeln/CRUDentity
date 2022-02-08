@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/EgMeln/CRUDentity/internal/config"
@@ -16,14 +16,17 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func main() {
+	initLog()
+
 	cfg, err := config.New()
 	if err != nil {
-		log.Fatalln("Config error: ", cfg)
+		log.WithField("Error", err).Fatal("Config error")
 	}
 	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime)*time.Second)
 	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime)*time.Second)
@@ -34,18 +37,18 @@ func main() {
 	switch cfg.DB {
 	case "postgres":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
-		log.Printf("DB URL: %s", cfg.DBURL)
+		log.Infof("DB URL: %s", cfg.DBURL)
 		pool := connectPostgres(cfg.DBURL)
 		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
 		authenticationService = service.NewAuthServicePostgres(&repository.PostgresUser{PoolUser: pool}, &repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
-		log.Printf("DB URL: %s", cfg.DBURL)
+		log.Infof("DB URL: %s", cfg.DBURL)
 		client, db := connectMongo(cfg.DBURL, cfg.DBNameMongo)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
-				log.Printf("Error connection to DB: %v", err)
+				log.WithField("Error", err).Warn("Error connection to DB")
 			}
 		}()
 		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
@@ -64,7 +67,7 @@ func main() {
 func connectPostgres(URL string) *pgxpool.Pool {
 	pool, err := pgxpool.Connect(context.Background(), URL)
 	if err != nil {
-		log.Printf("Error connection to DB: %v", err)
+		log.WithField("Error", err).Warn("Error connection to DB")
 	}
 	defer pool.Close()
 	return pool
@@ -72,7 +75,7 @@ func connectPostgres(URL string) *pgxpool.Pool {
 func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(URL))
 	if err != nil {
-		log.Printf("Error connection to DB: %v", err)
+		log.WithField("Error", err).Warn("Error connection to DB")
 	}
 	db := client.Database(DBName)
 	return client, db
@@ -104,4 +107,9 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))
 	return e
+}
+func initLog() {
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
 }

@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -13,16 +13,18 @@ import (
 func (rep *MongoUser) Add(e context.Context, user *model.User) error {
 	_, err := rep.CollectionUsers.InsertOne(e, user)
 	if err != nil {
-		return fmt.Errorf("can't create user %w", err)
+		log.Errorf("can't create user %s", err)
+		return err
 	}
 	return err
 }
 
 // GetAll function for getting all users from a mongo table
-func (rep *MongoUser) GetAll(e context.Context) ([]*model.User, error) {
+func (rep *MongoUser) GetAll(e context.Context) ([]*model.User, error) { //nolint:dupl //Different business logic
 	rows, err := rep.CollectionUsers.Find(e, bson.M{})
 	if err != nil {
-		return nil, fmt.Errorf("can't select all users %w", err)
+		log.Errorf("can't select all users %s", err)
+		return nil, err
 	}
 	var users []*model.User
 	for rows.Next(e) {
@@ -43,9 +45,11 @@ func (rep *MongoUser) Get(e context.Context, username string) (*model.User, erro
 	var user model.User
 	err := rep.CollectionUsers.FindOne(e, bson.M{"username": username}).Decode(&user)
 	if err == mongo.ErrNoDocuments {
-		return nil, fmt.Errorf("record doesn't exist %w", err)
+		log.Errorf("record doesn't exist %s", err)
+		return nil, err
 	} else if err != nil {
-		return nil, fmt.Errorf("can't select user %w", err)
+		log.Errorf("can't select user %s", err)
+		return nil, err
 	}
 	return &user, err
 }
@@ -54,7 +58,8 @@ func (rep *MongoUser) Get(e context.Context, username string) (*model.User, erro
 func (rep *MongoUser) Update(e context.Context, username, password string, admin bool) error {
 	_, err := rep.CollectionUsers.UpdateOne(e, bson.M{"username": username}, bson.M{"$set": bson.M{"password": password, "admin": admin}})
 	if err != nil {
-		return fmt.Errorf("can't update user %w", err)
+		log.Errorf("can't update user %s", err)
+		return err
 	}
 	return err
 }
@@ -63,10 +68,12 @@ func (rep *MongoUser) Update(e context.Context, username, password string, admin
 func (rep *MongoUser) Delete(e context.Context, username string) error {
 	row, err := rep.CollectionUsers.DeleteOne(e, bson.M{"username": username})
 	if err != nil {
-		return fmt.Errorf("can't delete user %w", err)
+		log.Errorf("can't delete user %s", err)
+		return err
 	}
 	if row.DeletedCount == 0 {
-		return fmt.Errorf("nothing to delete%w", err)
+		log.Errorf("nothing to delete %s", err)
+		return err
 	}
 	return err
 }

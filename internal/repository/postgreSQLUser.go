@@ -2,16 +2,17 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
+	log "github.com/sirupsen/logrus"
 )
 
 // Add function for inserting a user into sql table
 func (rep *PostgresUser) Add(e context.Context, user *model.User) error {
 	_, err := rep.PoolUser.Exec(e, "INSERT INTO users (username,password,admin) VALUES ($1,$2,$3)", user.Username, user.Password, user.Admin)
 	if err != nil {
-		return fmt.Errorf("can't create user %w", err)
+		log.Errorf("can't create user %s", err)
+		return err
 	}
 	return err
 }
@@ -20,7 +21,8 @@ func (rep *PostgresUser) Add(e context.Context, user *model.User) error {
 func (rep *PostgresUser) GetAll(e context.Context) ([]*model.User, error) {
 	rows, err := rep.PoolUser.Query(e, "SELECT * FROM users")
 	if err != nil {
-		return nil, fmt.Errorf("can't select all users %w", err)
+		log.Errorf("can't select all users %s", err)
+		return nil, err
 	}
 	defer rows.Close()
 	var users []*model.User
@@ -45,7 +47,8 @@ func (rep *PostgresUser) Get(e context.Context, username string) (*model.User, e
 	var user model.User
 	err := rep.PoolUser.QueryRow(e, "SELECT username,password,admin from users where username=$1", username).Scan(&user.Username, &user.Password, &user.Admin)
 	if err != nil {
-		return nil, fmt.Errorf("can't select parking lot %w", err)
+		log.Errorf("can't select parking lot %s", err)
+		return nil, err
 	}
 	return &user, err
 }
@@ -54,7 +57,8 @@ func (rep *PostgresUser) Get(e context.Context, username string) (*model.User, e
 func (rep *PostgresUser) Update(e context.Context, username, password string, admin bool) error {
 	_, err := rep.PoolUser.Exec(e, "UPDATE users SET password =$1,admin =$2 WHERE username = $3", password, admin, username)
 	if err != nil {
-		return fmt.Errorf("can't update parking lot %w", err)
+		log.Errorf("can't update parking lot %s", err)
+		return err
 	}
 	return err
 }
@@ -63,10 +67,12 @@ func (rep *PostgresUser) Update(e context.Context, username, password string, ad
 func (rep *PostgresUser) Delete(e context.Context, username string) error {
 	row, err := rep.PoolUser.Exec(e, "DELETE FROM users where username=$1", username)
 	if err != nil {
-		return fmt.Errorf("can't delete parking lot %w", err)
+		log.Errorf("can't delete parking lot %s", err)
+		return err
 	}
 	if row.RowsAffected() != 1 {
-		return fmt.Errorf("nothing to delete%w", err)
+		log.Errorf("nothing to delete %s", err)
+		return err
 	}
 	return err
 }

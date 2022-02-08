@@ -8,6 +8,7 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/request"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 // UserHandler struct that contain repository linc
@@ -24,7 +25,8 @@ func NewServiceUser(srv *service.UserService) UserHandler {
 func (handler *UserHandler) GetAll(e echo.Context) error {
 	users, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, users)
+		log.WithField("Error", err).Warn("Get all users error")
+		return echo.NewHTTPError(http.StatusInternalServerError, users)
 	}
 	return e.JSON(http.StatusOK, users)
 }
@@ -36,7 +38,8 @@ func (handler *UserHandler) Get(e echo.Context) error {
 	var err error
 	user, err = handler.service.Get(e.Request().Context(), username)
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		log.WithField("Error", err).Warn("Get user error")
+		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 	return e.JSON(http.StatusOK, user)
 }
@@ -46,11 +49,13 @@ func (handler *UserHandler) Update(e echo.Context) error {
 	username := e.Param("username")
 	c := new(request.UpdateUser)
 	if err := e.Bind(c); err != nil {
-		return err
+		log.WithField("Error", err).Warn("Bind fail")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 	err := handler.service.Update(e.Request().Context(), username, c.Password, c.Admin)
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, c)
+		log.WithField("Error", err).Warn("Update user error")
+		return echo.NewHTTPError(http.StatusInternalServerError, c)
 	}
 	return e.JSON(http.StatusOK, c)
 }
@@ -58,13 +63,10 @@ func (handler *UserHandler) Update(e echo.Context) error {
 // Delete deleting user
 func (handler *UserHandler) Delete(e echo.Context) error {
 	username := e.Param("username")
-	var err error
+	err := handler.service.Delete(e.Request().Context(), username)
 	if err != nil {
-		return err
-	}
-	err = handler.service.Delete(e.Request().Context(), username)
-	if err != nil {
-		return e.JSON(http.StatusBadRequest, e)
+		log.WithField("Error", err).Warn("Delete user error")
+		return echo.NewHTTPError(http.StatusInternalServerError, e)
 	}
 	return e.JSON(http.StatusOK, e)
 }

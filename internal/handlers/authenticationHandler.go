@@ -8,6 +8,7 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/request"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/labstack/echo/v4"
+	log "github.com/sirupsen/logrus"
 )
 
 // AuthenticationHandler struct that contain repository linc
@@ -21,14 +22,16 @@ func NewServiceAuthentication(srv *service.AuthenticationService) Authentication
 }
 
 // SignUp user
-func (handler *AuthenticationHandler) SignUp(e echo.Context) error {
+func (handler *AuthenticationHandler) SignUp(e echo.Context) error { //nolint:dupl //Different business logic
 	user := new(request.SignInSignUpUser)
 	if err := e.Bind(user); err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		log.WithField("Error", err).Warn("Bind fail")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 	err := handler.service.SignUp(e.Request().Context(), &model.User{Username: user.Username, Password: user.Password, Admin: user.Admin})
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		log.WithField("Error", err).Warn("Sign up error")
+		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 	return e.JSON(http.StatusOK, user)
 }
@@ -38,28 +41,32 @@ func (handler *AuthenticationHandler) SignIn(e echo.Context) error {
 	user := new(request.SignInSignUpUser)
 
 	if err := e.Bind(user); err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		log.WithField("Error", err).Warn("Bind fail")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	accessToken, refreshToken, err := handler.service.SignIn(e.Request().Context(), &model.User{Username: user.Username, Password: user.Password, Admin: user.Admin})
 
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, err)
+		log.WithField("Error", err).Warn("Sign in error")
+		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 
-	return e.JSON(http.StatusOK, fmt.Sprintf("access token %s, refresh token %s", accessToken, refreshToken))
+	return e.JSON(http.StatusOK, fmt.Sprintf("access token <%s>, refresh token <%s>", accessToken, refreshToken))
 }
 
 // Refresh token
 func (handler *AuthenticationHandler) Refresh(e echo.Context) error {
 	user := new(request.RefreshToken)
 	if err := e.Bind(user); err != nil {
-		return e.JSON(http.StatusBadRequest, user)
+		log.WithField("Error", err).Warn("Bind fail")
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	accessToken, refreshToken, err := handler.service.RefreshToken(e.Request().Context(), &model.User{Username: user.Username, Admin: user.Admin})
 	if err != nil {
-		return e.JSON(http.StatusBadRequest, err)
+		log.WithField("Error", err).Warn("Refresh token error")
+		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 
 	return e.JSON(http.StatusOK, fmt.Sprintf("new access token <%s>, new refresh token <%s>", accessToken, refreshToken))

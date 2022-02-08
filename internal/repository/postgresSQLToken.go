@@ -2,9 +2,9 @@ package repository
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -13,7 +13,8 @@ func (rep *PostgresToken) Add(e context.Context, token *model.Token) error {
 	_, err := rep.PoolToken.Exec(e, "INSERT INTO tokens (username,admin,token) VALUES ($1,$2,$3)", token.Username, token.Admin, token.RefreshToken)
 
 	if err != nil {
-		return fmt.Errorf("can't create user %w", err)
+		log.Errorf("can't create user %s", err)
+		return err
 	}
 	return err
 }
@@ -23,9 +24,11 @@ func (rep *PostgresToken) Get(e context.Context, username string) (string, error
 	var token model.Token
 	err := rep.PoolToken.QueryRow(e, "SELECT username,admin,token from tokens where username=$1", username).Scan(&token.Username, &token.Admin, &token.RefreshToken)
 	if err == mongo.ErrNoDocuments {
-		return "", fmt.Errorf("record doesn't exist %w", err)
+		log.Errorf("record doesn't exist %s", err)
+		return "", err
 	} else if err != nil {
-		return "", fmt.Errorf("can't select token %w", err)
+		log.Errorf("can't select token %s", err)
+		return "", err
 	}
 	return token.RefreshToken, err
 }
@@ -34,10 +37,12 @@ func (rep *PostgresToken) Get(e context.Context, username string) (string, error
 func (rep *PostgresToken) Delete(e context.Context, username string) error {
 	row, err := rep.PoolToken.Exec(e, "DELETE FROM tokens where username=$1", username)
 	if err != nil {
-		return fmt.Errorf("can't delete token %w", err)
+		log.Errorf("can't delete token %s", err)
+		return err
 	}
 	if row.RowsAffected() != 1 {
-		return fmt.Errorf("nothing to delete%w", err)
+		log.Errorf("nothing to delete%s", err)
+		return err
 	}
 	return err
 }
