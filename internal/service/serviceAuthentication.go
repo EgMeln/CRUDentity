@@ -48,7 +48,6 @@ func (srv *AuthenticationService) SignUp(e context.Context, user *model.User) er
 	pwd.Write([]byte(user.Password))
 	pwd.Write([]byte(srv.hashSalt))
 	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
-
 	_, err := srv.conn.Get(e, user.Username)
 	if err != nil {
 		return srv.conn.Add(e, user)

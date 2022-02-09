@@ -25,7 +25,7 @@ func NewServiceUser(srv *service.UserService) UserHandler {
 func (handler *UserHandler) GetAll(e echo.Context) error {
 	users, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
-		log.WithField("Error", err).Warn("Get all users error")
+		log.Warnf("Get all users error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, users)
 	}
 	return e.JSON(http.StatusOK, users)
@@ -38,7 +38,7 @@ func (handler *UserHandler) Get(e echo.Context) error {
 	var err error
 	user, err = handler.service.Get(e.Request().Context(), username)
 	if err != nil {
-		log.WithField("Error", err).Warn("Get user error")
+		log.Warnf("Get user error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 	return e.JSON(http.StatusOK, user)
@@ -49,12 +49,12 @@ func (handler *UserHandler) Update(e echo.Context) error {
 	username := e.Param("username")
 	c := new(request.UpdateUser)
 	if err := e.Bind(c); err != nil {
-		log.WithField("Error", err).Warn("Bind fail")
+		log.Warnf("Bind fail %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	err := handler.service.Update(e.Request().Context(), username, c.Password, c.Admin)
+	err := handler.service.Update(e.Request().Context(), &model.User{Username: username, Password: c.Password, Admin: c.Admin})
 	if err != nil {
-		log.WithField("Error", err).Warn("Update user error")
+		log.Warnf("Update user error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, c)
 	}
 	return e.JSON(http.StatusOK, c)
@@ -65,7 +65,7 @@ func (handler *UserHandler) Delete(e echo.Context) error {
 	username := e.Param("username")
 	err := handler.service.Delete(e.Request().Context(), username)
 	if err != nil {
-		log.WithField("Error", err).Warn("Delete user error")
+		log.Warnf("Delete user error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, e)
 	}
 	return e.JSON(http.StatusOK, e)

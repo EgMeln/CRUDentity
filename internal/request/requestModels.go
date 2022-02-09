@@ -14,8 +14,14 @@ type ParkingLotUpdate struct {
 	Remark    string `json:"remark" form:"remark"`
 }
 
-// SignInSignUpUser struct that contain record info,which will be recorded when sign up or sign in user
-type SignInSignUpUser struct {
+// SignUpUser struct that contain record info,which will be recorded when sign up user
+type SignUpUser struct {
+	Username string `json:"username" form:"username"`
+	Password string `json:"password" form:"password"`
+}
+
+// SignInUser struct that contain record info,which will be recorded when sign in user
+type SignInUser struct {
 	Username string `json:"username" form:"username"`
 	Password string `json:"password" form:"password"`
 	Admin    bool   `json:"admin" form:"admin"`

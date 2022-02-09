@@ -26,7 +26,7 @@ func main() {
 
 	cfg, err := config.New()
 	if err != nil {
-		log.WithField("Error", err).Fatal("Config error")
+		log.Warnf("Config error %v", err)
 	}
 	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime)*time.Second)
 	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime)*time.Second)
@@ -48,7 +48,7 @@ func main() {
 		client, db := connectMongo(cfg.DBURL, cfg.DBNameMongo)
 		defer func() {
 			if err = client.Disconnect(context.Background()); err != nil {
-				log.WithField("Error", err).Warn("Error connection to DB")
+				log.Warnf("Error connection to DB %v", err)
 			}
 		}()
 		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
@@ -67,7 +67,7 @@ func main() {
 func connectPostgres(URL string) *pgxpool.Pool {
 	pool, err := pgxpool.Connect(context.Background(), URL)
 	if err != nil {
-		log.WithField("Error", err).Warn("Error connection to DB")
+		log.Warnf("Error connection to DB %v", err)
 	}
 	defer pool.Close()
 	return pool
@@ -75,7 +75,7 @@ func connectPostgres(URL string) *pgxpool.Pool {
 func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 	client, err := mongo.Connect(context.Background(), options.Client().ApplyURI(URL))
 	if err != nil {
-		log.WithField("Error", err).Warn("Error connection to DB")
+		log.Warnf("Error connection to DB %v", err)
 	}
 	db := client.Database(DBName)
 	return client, db

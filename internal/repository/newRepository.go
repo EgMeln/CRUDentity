@@ -53,7 +53,7 @@ type Users interface {
 	Add(e context.Context, lot *model.User) error
 	GetAll(e context.Context) ([]*model.User, error)
 	Get(e context.Context, username string) (*model.User, error)
-	Update(e context.Context, username string, password string, admin bool) error
+	Update(e context.Context, user *model.User) error
 	Delete(e context.Context, username string) error
 }
 

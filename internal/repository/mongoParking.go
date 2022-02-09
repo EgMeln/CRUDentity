@@ -2,19 +2,21 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
-	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // Add function for inserting a parking lot into mongo table
 func (rep *MongoParking) Add(e context.Context, lot *model.ParkingLot) error {
+	if ok := lot.Validate(); ok != nil {
+		return fmt.Errorf("can't create parking lot. invalid data %w", ok)
+	}
 	_, err := rep.CollectionParkingLot.InsertOne(e, lot)
 	if err != nil {
-		log.Errorf("can't create parking lot %s", err)
-		return err
+		return fmt.Errorf("can't create parking lot %w", err)
 	}
 	return err
 }
@@ -23,8 +25,7 @@ func (rep *MongoParking) Add(e context.Context, lot *model.ParkingLot) error {
 func (rep *MongoParking) GetAll(e context.Context) ([]*model.ParkingLot, error) { //nolint:dupl //Different business logic
 	rows, err := rep.CollectionParkingLot.Find(e, bson.M{})
 	if err != nil {
-		log.Errorf("can't select all parking lots %s", err)
-		return nil, err
+		return nil, fmt.Errorf("can't select all parking lots %w", err)
 	}
 	var lots []*model.ParkingLot
 	for rows.Next(e) {
@@ -45,11 +46,9 @@ func (rep *MongoParking) GetByNum(e context.Context, num int) (*model.ParkingLot
 	var lot model.ParkingLot
 	err := rep.CollectionParkingLot.FindOne(e, bson.M{"num": num}).Decode(&lot)
 	if err == mongo.ErrNoDocuments {
-		log.Errorf("record doesn't exist %s", err)
-		return nil, err
+		return nil, fmt.Errorf("record doesn't exist %w", err)
 	} else if err != nil {
-		log.Errorf("can't select parking lot %s", err)
-		return nil, err
+		return nil, fmt.Errorf("can't select parking lot %w", err)
 	}
 	return &lot, err
 }
@@ -58,8 +57,7 @@ func (rep *MongoParking) GetByNum(e context.Context, num int) (*model.ParkingLot
 func (rep *MongoParking) Update(e context.Context, num int, inParking bool, remark string) error {
 	_, err := rep.CollectionParkingLot.UpdateOne(e, bson.M{"num": num}, bson.M{"$set": bson.M{"inparking": inParking, "remark": remark}})
 	if err != nil {
-		log.Errorf("can't update parking lot %s", err)
-		return err
+		return fmt.Errorf("can't update parking lot %w", err)
 	}
 	return err
 }
@@ -68,12 +66,10 @@ func (rep *MongoParking) Update(e context.Context, num int, inParking bool, rema
 func (rep *MongoParking) Delete(e context.Context, num int) error {
 	row, err := rep.CollectionParkingLot.DeleteOne(e, bson.M{"num": num})
 	if err != nil {
-		log.Errorf("can't delete parking lot %s", err)
-		return err
+		return fmt.Errorf("can't delete parking lot %w", err)
 	}
 	if row.DeletedCount == 0 {
-		log.Errorf("nothing to delete%s", err)
-		return err
+		return fmt.Errorf("nothing to delete%w", err)
 	}
 	return err
 }

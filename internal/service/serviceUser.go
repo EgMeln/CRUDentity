@@ -38,8 +38,8 @@ func (srv *UserService) Get(e context.Context, username string) (*model.User, er
 }
 
 // Update updating user
-func (srv *UserService) Update(e context.Context, username, password string, admin bool) error {
-	return srv.conn.Update(e, username, password, admin)
+func (srv *UserService) Update(e context.Context, user *model.User) error {
+	return srv.conn.Update(e, user)
 }
 
 // Delete deleting user
