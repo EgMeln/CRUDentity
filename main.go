@@ -10,9 +10,10 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/handlers"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
-	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
 	"github.com/EgMeln/CRUDentity/internal/service"
+	"github.com/EgMeln/CRUDentity/internal/validation"
+	"github.com/go-playground/validator"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -41,7 +42,7 @@ func main() {
 		pool := connectPostgres(cfg.DBURL)
 		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
-		authenticationService = service.NewAuthServicePostgres(&repository.PostgresUser{PoolUser: pool}, &repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
+		authenticationService = service.NewAuthServicePostgres(&repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%d", cfg.DB, cfg.HostMongo, cfg.PortMongo)
 		log.Infof("DB URL: %s", cfg.DBURL)
@@ -53,16 +54,14 @@ func main() {
 		}()
 		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
-		repMongoUsers := &repository.MongoUser{CollectionUsers: db.Collection("users")}
 		repMongoTokens := &repository.MongoToken{CollectionTokens: db.Collection("tokens")}
-		authenticationService = service.NewAuthServiceMongo(repMongoUsers, repMongoTokens, access, refresh, cfg.HashSalt)
+		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)
 	}
 
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
-	userHandler := handlers.NewServiceUser(userService)
-	authenticationHandler := handlers.NewServiceAuthentication(authenticationService)
+	userHandler := handlers.NewServiceUser(userService, authenticationService)
 
-	runEcho(&parkingHandler, &userHandler, &authenticationHandler, cfg)
+	runEcho(&parkingHandler, &userHandler, cfg)
 }
 func connectPostgres(URL string) *pgxpool.Pool {
 	pool, err := pgxpool.Connect(context.Background(), URL)
@@ -80,15 +79,18 @@ func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 	db := client.Database(DBName)
 	return client, db
 }
-func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, authenticationHandler *handlers.AuthenticationHandler, cfg *config.Config) *echo.Echo {
+func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, cfg *config.Config) *echo.Echo {
 	e := echo.New()
+	e.Validator = &validation.CustomValidator{Validator: validator.New()}
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.POST("/auth/sign-in", authenticationHandler.SignIn)
-	e.POST("/auth/sign-up", authenticationHandler.SignUp)
+	e.POST("/auth/sign-in", userHandler.SignIn)
+	e.POST("/auth/sign-up", userHandler.Add)
+
 	admin := e.Group("/admin")
-	configuration := middleware.JWTConfig{Claims: &model.Claim{}, SigningKey: []byte(cfg.AccessToken)}
+	configuration := middleware.JWTConfig{Claims: &config.Claim{}, SigningKey: []byte(cfg.AccessToken)}
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(middlewares.CheckAccess)
 
@@ -102,7 +104,7 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
 
-	user.POST("/refresh", authenticationHandler.Refresh)
+	user.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.Logger.Fatal(e.Start(":8080"))

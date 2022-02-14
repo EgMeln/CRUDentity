@@ -11,9 +11,6 @@ import (
 
 // Add function for inserting a user into mongo table
 func (rep *MongoUser) Add(e context.Context, user *model.User) error {
-	if ok := user.Validate(); ok != nil {
-		return fmt.Errorf("can't create user. invalid data %w", ok)
-	}
 	_, err := rep.CollectionUsers.InsertOne(e, user)
 	if err != nil {
 		return fmt.Errorf("can't create user %w", err)
@@ -55,9 +52,6 @@ func (rep *MongoUser) Get(e context.Context, username string) (*model.User, erro
 
 // Update function for updating user from a mongo table
 func (rep *MongoUser) Update(e context.Context, user *model.User) error {
-	if ok := user.Validate(); ok != nil {
-		return fmt.Errorf("can't update user. invalid data %w", ok)
-	}
 	_, err := rep.CollectionUsers.UpdateOne(e, bson.M{"username": user.Username}, bson.M{"$set": bson.M{"password": user.Password, "admin": user.Admin}})
 	if err != nil {
 		return fmt.Errorf("can't update user %w", err)

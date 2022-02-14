@@ -28,6 +28,10 @@ func (handler *ParkingLotHandler) Add(e echo.Context) (err error) { //nolint:dup
 		log.Warnf("Bind fail %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
+	if ok := e.Validate(c); ok != nil {
+		log.Warnf("Validation error: %v", ok)
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
 	err = handler.service.Add(e.Request().Context(), &model.ParkingLot{Num: c.Num, InParking: c.InParking, Remark: c.Remark})
 	if err != nil {
 		log.Warnf("Add parking lot error %v", err)
@@ -67,6 +71,10 @@ func (handler *ParkingLotHandler) Update(e echo.Context) error {
 	c := new(request.ParkingLotUpdate)
 	if err := e.Bind(c); err != nil {
 		log.Warnf("Bind fail %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := e.Validate(c); err != nil {
+		log.Warnf("Validation error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 	num, err := strconv.Atoi(e.Param("num"))

@@ -11,9 +11,6 @@ import (
 
 // Add function for inserting a parking lot into mongo table
 func (rep *MongoParking) Add(e context.Context, lot *model.ParkingLot) error {
-	if ok := lot.Validate(); ok != nil {
-		return fmt.Errorf("can't create parking lot. invalid data %w", ok)
-	}
 	_, err := rep.CollectionParkingLot.InsertOne(e, lot)
 	if err != nil {
 		return fmt.Errorf("can't create parking lot %w", err)

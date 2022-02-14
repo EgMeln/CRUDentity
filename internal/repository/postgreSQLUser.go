@@ -9,9 +9,6 @@ import (
 
 // Add function for inserting a user into sql table
 func (rep *PostgresUser) Add(e context.Context, user *model.User) error {
-	if ok := user.Validate(); ok != nil {
-		return fmt.Errorf("can't create user. invalid data %w", ok)
-	}
 	_, err := rep.PoolUser.Exec(e, "INSERT INTO users (username,password,admin) VALUES ($1,$2,$3)", user.Username, user.Password, user.Admin)
 	if err != nil {
 		return fmt.Errorf("can't create user %w", err)
@@ -55,9 +52,6 @@ func (rep *PostgresUser) Get(e context.Context, username string) (*model.User, e
 
 // Update function for updating user from a sql table
 func (rep *PostgresUser) Update(e context.Context, user *model.User) error {
-	if ok := user.Validate(); ok != nil {
-		return fmt.Errorf("can't update user. invalid data %w", ok)
-	}
 	_, err := rep.PoolUser.Exec(e, "UPDATE users SET password =$1,admin =$2 WHERE username = $3", user.Password, user.Admin, user.Username)
 	if err != nil {
 		return fmt.Errorf("can't update parking lot %w", err)

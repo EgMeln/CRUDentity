@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // UserService struct for rep
@@ -24,7 +26,17 @@ func NewUserServiceMongo(rep *repository.MongoUser) *UserService {
 
 // Add record about user
 func (srv *UserService) Add(e context.Context, user *model.User) error {
-	return srv.conn.Add(e, user)
+	hashedPass, ok := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if ok != nil {
+		return fmt.Errorf("can't hashing password %w", ok)
+	}
+	user.Password = string(hashedPass)
+
+	_, err := srv.conn.Get(e, user.Username)
+	if err != nil {
+		return srv.conn.Add(e, user)
+	}
+	return fmt.Errorf("this user already exist %w", err)
 }
 
 // GetAll getting all users

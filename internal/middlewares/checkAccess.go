@@ -4,7 +4,7 @@ package middlewares
 import (
 	"net/http"
 
-	"github.com/EgMeln/CRUDentity/internal/model"
+	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 )
@@ -16,7 +16,7 @@ func CheckAccess(next echo.HandlerFunc) echo.HandlerFunc {
 			return next(e)
 		}
 		u := e.Get("user").(*jwt.Token)
-		claims := u.Claims.(*model.Claim)
+		claims := u.Claims.(*config.Claim)
 
 		if !claims.Admin {
 			return echo.NewHTTPError(http.StatusNotAcceptable, "have no access")

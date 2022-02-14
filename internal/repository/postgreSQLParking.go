@@ -9,9 +9,6 @@ import (
 
 // Add function for inserting a parking lot into sql table
 func (rep *PostgresParking) Add(e context.Context, lot *model.ParkingLot) error {
-	if ok := lot.Validate(); ok != nil {
-		return fmt.Errorf("can't create parking lot. invalid data %w", ok)
-	}
 	_, err := rep.PoolParking.Exec(e, "INSERT INTO parking (num,inparking,remark) VALUES ($1,$2,$3)", lot.Num, lot.InParking, lot.Remark)
 	if err != nil {
 		return fmt.Errorf("can't create parking lot %w", err)

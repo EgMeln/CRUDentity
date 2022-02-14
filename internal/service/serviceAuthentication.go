@@ -7,14 +7,15 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
 	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthenticationService struct for rep
 type AuthenticationService struct {
-	conn         repository.Users
 	token        repository.Tokens
 	accessToken  *JWTService
 	refreshToken *JWTService
@@ -28,13 +29,13 @@ type JWTService struct {
 }
 
 // NewAuthServicePostgres used for setting postgres services
-func NewAuthServicePostgres(rep *repository.PostgresUser, rep2 *repository.PostgresToken, access, refresh *JWTService, hashSalt string) *AuthenticationService {
-	return &AuthenticationService{conn: rep, token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
+func NewAuthServicePostgres(rep2 *repository.PostgresToken, access, refresh *JWTService, hashSalt string) *AuthenticationService {
+	return &AuthenticationService{token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
 }
 
 // NewAuthServiceMongo used for setting mongo services
-func NewAuthServiceMongo(rep *repository.MongoUser, rep2 *repository.MongoToken, access, refresh *JWTService, hashSalt string) *AuthenticationService {
-	return &AuthenticationService{conn: rep, token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
+func NewAuthServiceMongo(rep2 *repository.MongoToken, access, refresh *JWTService, hashSalt string) *AuthenticationService {
+	return &AuthenticationService{token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
 }
 
 // NewJWTService used for token setting mongo services
@@ -42,43 +43,12 @@ func NewJWTService(key []byte, tokenLifeTime time.Duration) *JWTService {
 	return &JWTService{Key: key, TokenLifeTime: tokenLifeTime}
 }
 
-// SignUp user
-func (srv *AuthenticationService) SignUp(e context.Context, user *model.User) error {
-	pwd := sha256.New()
-	pwd.Write([]byte(user.Password))
-	pwd.Write([]byte(srv.hashSalt))
-	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
-	_, err := srv.conn.Get(e, user.Username)
-	if err != nil {
-		return srv.conn.Add(e, user)
+// SignIn generate token
+func (srv *AuthenticationService) SignIn(e context.Context, user *model.User, pass string) (access, refresh string, ok error) {
+	if ok := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(pass)); ok != nil {
+		return "", "", fmt.Errorf("authentication comparing passwords error %w", ok)
 	}
-
-	return fmt.Errorf("can't insert user %w", err)
-}
-
-// SignIn user and generate token
-func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (access, refresh string, ok error) {
-	pwd := sha256.New()
-	pwd.Write([]byte(user.Password))
-	pwd.Write([]byte(srv.hashSalt))
-	user.Password = fmt.Sprintf("%x", pwd.Sum(nil))
-
-	userSignIn, err := srv.conn.Get(e, user.Username)
-
-	if err != nil {
-		return "", "", fmt.Errorf("error with get user %w", err)
-	}
-	if user.Password != userSignIn.Password {
-		return "", "", fmt.Errorf("error with password %w", err)
-	}
-	if user.Admin != userSignIn.Admin {
-		return "", "", fmt.Errorf("error with role %w", err)
-	}
-
-	err = srv.token.Delete(e, user.Username)
-	if err != nil {
-		return "", "", fmt.Errorf("can't delete token %w", err)
-	}
+	_ = srv.token.Delete(e, user.Username)
 
 	accessToken, refreshToken, err := srv.GenerateRefreshAccessToken(srv.accessToken, srv.refreshToken, user)
 	if err != nil {
@@ -86,12 +56,12 @@ func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (a
 	}
 
 	shRefreshToken := refreshToken
-	pwd = sha256.New()
+	pwd := sha256.New()
 	pwd.Write([]byte(shRefreshToken))
 	pwd.Write([]byte(srv.hashSalt))
 	shRefreshToken = fmt.Sprintf("%x", pwd.Sum(nil))
 
-	err = srv.token.Add(e, &model.Token{Username: userSignIn.Username, Admin: userSignIn.Admin, RefreshToken: shRefreshToken})
+	err = srv.token.Add(e, &model.Token{Username: user.Username, RefreshToken: shRefreshToken})
 	if err != nil {
 		return "", "", fmt.Errorf("can't add refresh token %w", err)
 	}
@@ -100,7 +70,7 @@ func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (a
 
 // GenerateToken generate token
 func (srv *AuthenticationService) GenerateToken(jwtService *JWTService, user *model.User) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &model.Claim{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &config.Claim{
 		StandardClaims: jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(jwtService.TokenLifeTime).Unix(),
 			IssuedAt:  time.Now().Unix(),
@@ -148,7 +118,7 @@ func (srv *AuthenticationService) RefreshToken(e context.Context, user *model.Us
 	pwd.Write([]byte(srv.hashSalt))
 	shRefreshToken = fmt.Sprintf("%x", pwd.Sum(nil))
 
-	err = srv.token.Add(e, &model.Token{Username: user.Username, Admin: user.Admin, RefreshToken: shRefreshToken})
+	err = srv.token.Add(e, &model.Token{Username: user.Username, RefreshToken: shRefreshToken})
 	if err != nil {
 		return "", "", fmt.Errorf("can't add refresh token %w", err)
 	}
