@@ -37,14 +37,14 @@ func (handler *UserHandler) SignIn(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	userSignIn, err := handler.userService.Get(e.Request().Context(), user.Username)
+	userSignIn, err := handler.userService.Get(e.Request().Context(), &model.User{Username: user.Username, Password: user.Password})
 
 	if err != nil {
 		log.Warnf("User doesn't exist: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 
-	accessToken, refreshToken, err := handler.authService.SignIn(e.Request().Context(), userSignIn, user.Password)
+	accessToken, refreshToken, err := handler.authService.SignIn(e.Request().Context(), userSignIn)
 
 	if err != nil {
 		log.Warnf("Tokens generate error: %v", err)
@@ -85,14 +85,18 @@ func (handler *UserHandler) GetAll(e echo.Context) error {
 // Get getting parking lot by username
 func (handler *UserHandler) Get(e echo.Context) error {
 	username := e.Param("username")
-	var user *model.User
+	var user *request.GetUser
 	var err error
-	user, err = handler.userService.Get(e.Request().Context(), username)
+	if ok := e.Bind(user); ok != nil {
+		log.Warnf("Bind fail %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	getUser, err := handler.userService.Get(e.Request().Context(), &model.User{Username: username, Password: user.Password})
 	if err != nil {
 		log.Warnf("Get user error %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, user)
+		return echo.NewHTTPError(http.StatusInternalServerError, getUser)
 	}
-	return e.JSON(http.StatusOK, user)
+	return e.JSON(http.StatusOK, getUser)
 }
 
 // Update updating user

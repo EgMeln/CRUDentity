@@ -45,8 +45,15 @@ func (srv *UserService) GetAll(e context.Context) ([]*model.User, error) {
 }
 
 // Get getting parking lot by username
-func (srv *UserService) Get(e context.Context, username string) (*model.User, error) {
-	return srv.conn.Get(e, username)
+func (srv *UserService) Get(e context.Context, user *model.User) (*model.User, error) {
+	getUser, err := srv.conn.Get(e, user.Username)
+	if err != nil {
+		return nil, err
+	}
+	if ok := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(user.Password)); ok != nil {
+		return nil, fmt.Errorf("authentication comparing passwords error %v", ok)
+	}
+	return getUser, err
 }
 
 // Update updating user

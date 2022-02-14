@@ -59,7 +59,7 @@ type Users interface {
 
 // Authentication used for structuring, function for working with authentication
 type Authentication interface {
-	SignIn(e context.Context, user *model.User, pass string) (string, string, error)
+	SignIn(e context.Context, user *model.User) (string, string, error)
 }
 
 // Tokens used for structuring, function for working with tokens

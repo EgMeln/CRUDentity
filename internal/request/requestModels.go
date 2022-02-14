@@ -35,3 +35,9 @@ type UpdateUser struct {
 type RefreshToken struct {
 	Username string `json:"username" form:"username" validate:"required"`
 }
+
+// GetUser struct that contain record info,which will be recorded when getting user
+type GetUser struct {
+	Username string `json:"username" form:"username" validate:"required"`
+	Password string `json:"password" form:"password" validate:"required"`
+}

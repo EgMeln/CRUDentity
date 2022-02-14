@@ -11,7 +11,6 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
 	"github.com/golang-jwt/jwt"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // AuthenticationService struct for rep
@@ -44,10 +43,7 @@ func NewJWTService(key []byte, tokenLifeTime time.Duration) *JWTService {
 }
 
 // SignIn generate token
-func (srv *AuthenticationService) SignIn(e context.Context, user *model.User, pass string) (access, refresh string, ok error) {
-	if ok := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(pass)); ok != nil {
-		return "", "", fmt.Errorf("authentication comparing passwords error %w", ok)
-	}
+func (srv *AuthenticationService) SignIn(e context.Context, user *model.User) (access, refresh string, ok error) {
 	_ = srv.token.Delete(e, user.Username)
 
 	accessToken, refreshToken, err := srv.GenerateRefreshAccessToken(srv.accessToken, srv.refreshToken, user)
