@@ -1,12 +1,14 @@
+// Package config to env
 package config
 
 import (
 	"github.com/caarlos0/env/v6"
 )
 
+// Config struct to config env
 type Config struct {
 	DB string `env:"DB" envDefault:"mongodb"`
-	//DB             string `env:"DB" envDefault:"postgres"`
+	// DB string `env:"DB" envDefault:"postgres"`
 	User           string `env:"USER" envDefault:"egormelnikov"`
 	Password       string `env:"PASSWORD" envDefault:"54236305"`
 	Host           string `env:"HOST" envDefault:"postgres"`
@@ -24,6 +26,7 @@ type Config struct {
 	HashSalt             string `env:"HASHSALT" envDefault:"HASHSALT"`
 }
 
+// New contract config
 func New() (*Config, error) {
 	cfg := &Config{}
 	if err := env.Parse(cfg); err != nil {
