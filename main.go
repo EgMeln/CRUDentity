@@ -106,9 +106,14 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 
 	user.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
+
 	user.GET("/park/:num", parkingHandler.GetByNum)
-	user.GET("/img/upload/:image", fileHandler.Upload)
-	user.GET("/img/download/:image", fileHandler.Download)
+	e.GET("/", func(c echo.Context) error {
+		return c.File("index.html")
+	})
+	e.POST("/uploadImage", fileHandler.Upload)
+	e.GET("/downloadImage", fileHandler.Download)
+
 	e.Logger.Fatal(e.Start(":8080"))
 	return e
 }

@@ -1,39 +1,44 @@
 package service
 
 import (
+	"context"
 	"fmt"
 	"io"
+	"mime/multipart"
 	"os"
-	"path/filepath"
 )
 
 // ImageService struct for download and upload file
 type ImageService struct {
-	images *os.File
+	images *multipart.FileHeader
 }
 
 // Download an image from file system
-func (srv *ImageService) Download(imageName string) error {
-	img, err := os.Open(filepath.Clean(imageName))
-	if err != nil {
-		return fmt.Errorf("can't download image %w", err)
-	}
-	srv.images = img
-	return err
+func (srv *ImageService) Download(e context.Context) *multipart.FileHeader {
+	return srv.images
 }
 
 // Upload an image in file system
-func (srv *ImageService) Upload(imageName string) error {
-	dst, err := os.Create(filepath.Clean(imageName))
+func (srv *ImageService) Upload(e context.Context, imageName *multipart.FileHeader) error {
+	srv.images = imageName
+	src, err := srv.images.Open()
 	if err != nil {
-		return fmt.Errorf("can't create image %w", err)
+		return fmt.Errorf("can't open file %v", err)
 	}
-	if _, err = io.Copy(dst, srv.images); err != nil {
-		return fmt.Errorf("can't copy image %w", err)
+	dst, err := os.Create(srv.images.Filename)
+	if err != nil {
+		return fmt.Errorf("can't create image %v", err)
+	}
+	if _, err = io.Copy(dst, src); err != nil {
+		return fmt.Errorf("can't copy image %v", err)
+	}
+	err = src.Close()
+	if err != nil {
+		return fmt.Errorf("can't close src %v", err)
 	}
 	err = dst.Close()
 	if err != nil {
-		return fmt.Errorf("can't close image %w", err)
+		return fmt.Errorf("can't close dst %v", err)
 	}
 	return err
 }

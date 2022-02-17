@@ -15,22 +15,20 @@ type ImageHandler struct {
 
 // Download an image from file system
 func (handler *ImageHandler) Download(e echo.Context) error {
-	image := e.Param("image")
-	err := handler.service.Download(image)
-	if err != nil {
-		log.Warnf("can't download image %v", err)
-		return echo.NewHTTPError(http.StatusBadGateway)
-	}
-	return e.JSON(http.StatusOK, image)
+	return e.Attachment(handler.service.Download(e.Request().Context()).Filename, "image")
 }
 
 // Upload an image in file system
 func (handler *ImageHandler) Upload(e echo.Context) error {
-	image := e.Param("image")
-	err := handler.service.Upload(image)
+	images, err := e.FormFile("image")
 	if err != nil {
 		log.Warnf("can't upload file %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	return e.JSON(http.StatusOK, image)
+	err = handler.service.Upload(e.Request().Context(), images)
+	if err != nil {
+		log.Warnf("can't upload file %v", err)
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	return e.JSON(http.StatusOK, images.Filename)
 }
