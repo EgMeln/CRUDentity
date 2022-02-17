@@ -60,8 +60,9 @@ func main() {
 
 	parkingHandler := handlers.NewServiceParkingLot(parkingService)
 	userHandler := handlers.NewServiceUser(userService, authenticationService)
+	fileHandler := handlers.ImageHandler{}
 
-	runEcho(&parkingHandler, &userHandler, cfg)
+	runEcho(&parkingHandler, &userHandler, &fileHandler, cfg)
 }
 func connectPostgres(URL string) *pgxpool.Pool {
 	pool, err := pgxpool.Connect(context.Background(), URL)
@@ -79,7 +80,7 @@ func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 	db := client.Database(DBName)
 	return client, db
 }
-func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, cfg *config.Config) *echo.Echo {
+func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, fileHandler *handlers.ImageHandler, cfg *config.Config) *echo.Echo {
 	e := echo.New()
 	e.Validator = &validation.CustomValidator{Validator: validator.New()}
 
@@ -88,7 +89,6 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	})
 	e.POST("/auth/sign-in", userHandler.SignIn)
 	e.POST("/auth/sign-up", userHandler.Add)
-
 	admin := e.Group("/admin")
 	configuration := middleware.JWTConfig{Claims: &config.Claim{}, SigningKey: []byte(cfg.AccessToken)}
 	admin.Use(middleware.JWTWithConfig(configuration))
@@ -106,7 +106,14 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 
 	user.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
+
 	user.GET("/park/:num", parkingHandler.GetByNum)
+	e.GET("/", func(c echo.Context) error {
+		return c.File("index.html")
+	})
+	e.POST("/uploadImage", fileHandler.Upload)
+	e.GET("/downloadImage", fileHandler.Download)
+
 	e.Logger.Fatal(e.Start(":8080"))
 	return e
 }
