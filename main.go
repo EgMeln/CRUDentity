@@ -107,12 +107,12 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	admin.GET("/users/:username", userHandler.Get)
 	admin.PUT("/users/:username", userHandler.Update)
 	admin.DELETE("/users/:username", userHandler.Delete)
+	admin.POST("/park", parkingHandler.Add)
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
 
 	user.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
-	user.POST("/park", parkingHandler.Add)
 
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.GET("/", func(c echo.Context) error {
