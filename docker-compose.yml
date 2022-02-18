@@ -12,6 +12,7 @@ services:
       POSTGRES_DB: "egormelnikovdb"
       POSTGRES_USER: "egormelnikov"
       POSTGRES_PASSWORD: "54236305"
+      REDIS_ADDR: "redis:6379"
     ports:
       - "5444:5432"
   mongo:
@@ -21,3 +22,7 @@ services:
       -MONGO_INITDB_DATABASE: "egormelnikovdb"
     ports:
       - "27072:27017"
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"

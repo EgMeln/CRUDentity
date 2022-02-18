@@ -14,6 +14,7 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/EgMeln/CRUDentity/internal/validation"
 	"github.com/go-playground/validator"
+	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -32,6 +33,12 @@ func main() {
 	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime)*time.Second)
 	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime)*time.Second)
 
+	redisCfg, err := config.NewRedis()
+	if err != nil {
+		log.Warnf("redis config error: %v", err)
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: redisCfg.Addr, Password: redisCfg.Password, DB: redisCfg.DB})
+
 	var parkingService *service.ParkingService
 	var userService *service.UserService
 	var authenticationService *service.AuthenticationService
@@ -40,7 +47,7 @@ func main() {
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Infof("DB URL: %s", cfg.DBURL)
 		pool := connectPostgres(cfg.DBURL)
-		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
+		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool}, repository.NewParkingLotCache(rdb))
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
 		authenticationService = service.NewAuthServicePostgres(&repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
@@ -52,7 +59,7 @@ func main() {
 				log.Warnf("Error connection to DB %v", err)
 			}
 		}()
-		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
+		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")}, repository.NewParkingLotCache(rdb))
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
 		repMongoTokens := &repository.MongoToken{CollectionTokens: db.Collection("tokens")}
 		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)
@@ -94,7 +101,6 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(middlewares.CheckAccess)
 
-	admin.POST("/park", parkingHandler.Add)
 	admin.PUT("/park/:num", parkingHandler.Update)
 	admin.DELETE("/park/:num", parkingHandler.Delete)
 	admin.GET("/users", userHandler.GetAll)
@@ -106,6 +112,7 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 
 	user.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
+	user.POST("/park", parkingHandler.Add)
 
 	user.GET("/park/:num", parkingHandler.GetByNum)
 	e.GET("/", func(c echo.Context) error {

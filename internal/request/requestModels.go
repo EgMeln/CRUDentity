@@ -4,13 +4,13 @@ package request
 // ParkingLotCreate struct that contain record info,which will be recorded when creating parking lot
 type ParkingLotCreate struct {
 	Num       int    `json:"num" form:"num" validate:"required"`
-	InParking bool   `json:"in_parking" form:"in_parking" validate:"required"`
+	InParking bool   `json:"in_parking" form:"in_parking"`
 	Remark    string `json:"remark" form:"remark"`
 }
 
 // ParkingLotUpdate struct that contain record info,which will be recorded when updating parking lot
 type ParkingLotUpdate struct {
-	InParking bool   `json:"in_parking" form:"in_parking" validate:"required"`
+	InParking bool   `json:"in_parking" form:"in_parking"`
 	Remark    string `json:"remark" form:"remark"`
 }
 
