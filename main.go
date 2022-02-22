@@ -42,12 +42,14 @@ func main() {
 	var parkingService *service.ParkingService
 	var userService *service.UserService
 	var authenticationService *service.AuthenticationService
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	switch cfg.DB {
 	case "postgres":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Infof("DB URL: %s", cfg.DBURL)
 		pool := connectPostgres(cfg.DBURL)
-		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool}, repository.NewParkingLotCache(rdb))
+		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool}, repository.NewParkingLotCache(ctx, rdb))
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
 		authenticationService = service.NewAuthServicePostgres(&repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
@@ -59,7 +61,7 @@ func main() {
 				log.Warnf("Error connection to DB %v", err)
 			}
 		}()
-		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")}, repository.NewParkingLotCache(rdb))
+		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")}, repository.NewParkingLotCache(ctx, rdb))
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
 		repMongoTokens := &repository.MongoToken{CollectionTokens: db.Collection("tokens")}
 		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)
