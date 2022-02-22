@@ -15,7 +15,6 @@ type ParkingLotCache struct {
 	client      *redis.Client
 	parkingMap  map[string]*model.ParkingLot
 	redisStream string
-	ctx         context.Context
 }
 
 // ParkingLotCacheRedis struct for cache func
@@ -27,8 +26,8 @@ type ParkingLotCacheRedis interface {
 
 // NewParkingLotCache returns new instance of ParkingLotCache
 func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache {
-	red := &ParkingLotCache{client: cln, redisStream: "STREAM", ctx: ctx, parkingMap: make(map[string]*model.ParkingLot)}
-	go red.StartProcessing()
+	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[string]*model.ParkingLot)}
+	go red.StartProcessing(ctx)
 	return red
 }
 
@@ -64,10 +63,10 @@ func (red *ParkingLotCache) Delete(e context.Context, num int) error {
 }
 
 // StartProcessing process the received message
-func (red *ParkingLotCache) StartProcessing() {
+func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 	for {
 		select {
-		case <-red.ctx.Done():
+		case <-ctx.Done():
 			return
 		default:
 			streams, err := red.client.XRead(context.Background(), &redis.XReadArgs{
