@@ -39,15 +39,15 @@ func (rep *MongoUser) GetAll(e context.Context) ([]*model.User, error) { //nolin
 }
 
 // Get function for getting user by username from a mongo table
-func (rep *MongoUser) Get(e context.Context, username string) (*model.User, error) {
-	var user model.User
-	err := rep.CollectionUsers.FindOne(e, bson.M{"username": username}).Decode(&user)
+func (rep *MongoUser) Get(e context.Context, user *model.User) (*model.User, error) {
+	var userGet model.User
+	err := rep.CollectionUsers.FindOne(e, bson.M{"username": user.Username}).Decode(&userGet)
 	if err == mongo.ErrNoDocuments {
 		return nil, fmt.Errorf("record doesn't exist %w", err)
 	} else if err != nil {
 		return nil, fmt.Errorf("can't select user %w", err)
 	}
-	return &user, err
+	return &userGet, err
 }
 
 // Update function for updating user from a mongo table

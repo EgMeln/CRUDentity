@@ -54,7 +54,7 @@ func (srv *ParkingService) GetByNum(e context.Context, num int) (*model.ParkingL
 	if err != nil {
 		return nil, fmt.Errorf("parking lot service %w", err)
 	}
-	return lot, ok
+	return lot, nil
 }
 
 // Update updating parking lot

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/go-redis/redis/v8"
@@ -13,8 +14,9 @@ import (
 // ParkingLotCache struct for redis client
 type ParkingLotCache struct {
 	client      *redis.Client
-	parkingMap  map[string]*model.ParkingLot
+	parkingMap  map[int]*model.ParkingLot
 	redisStream string
+	mu          sync.RWMutex
 }
 
 // ParkingLotCacheRedis struct for cache func
@@ -26,7 +28,7 @@ type ParkingLotCacheRedis interface {
 
 // NewParkingLotCache returns new instance of ParkingLotCache
 func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache {
-	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[string]*model.ParkingLot)}
+	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[int]*model.ParkingLot), mu: sync.RWMutex{}}
 	go red.StartProcessing(ctx)
 	return red
 }
@@ -49,7 +51,9 @@ func (red *ParkingLotCache) Add(e context.Context, lot *model.ParkingLot) error 
 
 // GetByNum getting parking lot cache by num
 func (red *ParkingLotCache) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
-	parkingLot, err := red.parkingMap[strconv.Itoa(num)]
+	red.mu.Lock()
+	parkingLot, err := red.parkingMap[num]
+	red.mu.Unlock()
 	if !err {
 		return nil, fmt.Errorf("redis get parking lot cache error %v", err)
 	}
@@ -58,7 +62,13 @@ func (red *ParkingLotCache) GetByNum(e context.Context, num int) (*model.Parking
 
 // Delete deleting parking lot cache
 func (red *ParkingLotCache) Delete(e context.Context, num int) error {
-	delete(red.parkingMap, strconv.Itoa(num))
+	red.mu.Lock()
+	res := red.client.XDel(e, red.redisStream, strconv.Itoa(num))
+	if res == nil {
+		return fmt.Errorf("nothing to delete from redis stream %v", res)
+	}
+	delete(red.parkingMap, num)
+	red.mu.Unlock()
 	return nil
 }
 
@@ -89,11 +99,13 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			if err != nil {
 				log.Warnf("converting in_parking to bool error %v", err)
 			}
-			red.parkingMap[stream["num"].(string)] = &model.ParkingLot{
+			red.mu.Lock()
+			red.parkingMap[num] = &model.ParkingLot{
 				Num:       num,
 				InParking: inPark,
 				Remark:    stream["remark"].(string),
 			}
+			red.mu.Unlock()
 		}
 	}
 }

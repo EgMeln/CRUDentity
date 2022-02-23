@@ -22,6 +22,15 @@ func NewServiceParkingLot(srv *service.ParkingService) ParkingLotHandler {
 }
 
 // Add record about parking lot
+// @Summary add parking lot
+// @ID add-parkingLot
+// @Security ApiKeyAuth
+// @Produce json
+// @Param request body request.ParkingLotCreate true "create parking lot"
+// @Success 200 {object} request.ParkingLotCreate
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/park [post]
 func (handler *ParkingLotHandler) Add(e echo.Context) (err error) { //nolint:dupl //Different business logic
 	c := new(request.ParkingLotCreate)
 	if err = e.Bind(c); err != nil {
@@ -41,6 +50,13 @@ func (handler *ParkingLotHandler) Add(e echo.Context) (err error) { //nolint:dup
 }
 
 // GetAll getting all parking lots
+// @Summary gets all parking lots
+// @ID get-all-parkingLots
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {array} model.ParkingLot
+// @Failure 500 {array} model.ParkingLot
+// @Router /user/park [get]
 func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 	parkingLots, err := handler.service.GetAll(e.Request().Context())
 	if err != nil {
@@ -51,6 +67,15 @@ func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 }
 
 // GetByNum getting parking lot by num
+// @Summary get parking lot by num
+// @ID get-parkingLot-by-num
+// @Security ApiKeyAuth
+// @Produce json
+// @Param num path string true "get parking lot"
+// @Success 200 {object} model.ParkingLot
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /user/park/{num} [get]
 func (handler *ParkingLotHandler) GetByNum(e echo.Context) error {
 	num, err := strconv.Atoi(e.Param("num"))
 	if err != nil {
@@ -67,6 +92,15 @@ func (handler *ParkingLotHandler) GetByNum(e echo.Context) error {
 }
 
 // Update updating parking lot
+// @Summary update parking lot by num
+// @ID update-parkingLot-by-num
+// @Security ApiKeyAuth
+// @Produce json
+// @Param request body request.ParkingLotUpdate true "update parking lot"
+// @Success 200 {object} request.ParkingLotUpdate
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/park [put]
 func (handler *ParkingLotHandler) Update(e echo.Context) error {
 	c := new(request.ParkingLotUpdate)
 	if err := e.Bind(c); err != nil {
@@ -77,12 +111,7 @@ func (handler *ParkingLotHandler) Update(e echo.Context) error {
 		log.Warnf("Validation error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	num, err := strconv.Atoi(e.Param("num"))
-	if err != nil {
-		log.Warnf("Num conv fail %v", err)
-		return echo.NewHTTPError(http.StatusBadRequest)
-	}
-	err = handler.service.Update(e.Request().Context(), num, c.InParking, c.Remark)
+	err := handler.service.Update(e.Request().Context(), c.Num, c.InParking, c.Remark)
 	if err != nil {
 		log.Warnf("Update parking lot error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, c)
@@ -91,6 +120,15 @@ func (handler *ParkingLotHandler) Update(e echo.Context) error {
 }
 
 // Delete deleting parking lot
+// @Summary delete parking lot by num
+// @ID delete-parkingLot-by-num
+// @Security ApiKeyAuth
+// @Produce json
+// @Param num path string true "delete parking lot"
+// @Success 200 {string} echo.Context
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/park/{num} [delete]
 func (handler *ParkingLotHandler) Delete(e echo.Context) error {
 	num, err := strconv.Atoi(e.Param("num"))
 	if err != nil {

@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
+	_ "github.com/EgMeln/CRUDentity/docs"
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/handlers"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
@@ -19,10 +19,23 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	log "github.com/sirupsen/logrus"
+	swaggerFiles "github.com/swaggo/echo-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// @title CRUD entity API
+// @version 1.0
+// @description CRUD entity API for Golang Project Parking.
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	initLog()
 
@@ -91,11 +104,9 @@ func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 }
 func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, fileHandler *handlers.ImageHandler, cfg *config.Config) *echo.Echo {
 	e := echo.New()
+	e.GET("/swagger/*any", swaggerFiles.WrapHandler)
 	e.Validator = &validation.CustomValidator{Validator: validator.New()}
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
 	e.POST("/auth/sign-in", userHandler.SignIn)
 	e.POST("/auth/sign-up", userHandler.Add)
 	admin := e.Group("/admin")
@@ -103,11 +114,11 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(middlewares.CheckAccess)
 
-	admin.PUT("/park/:num", parkingHandler.Update)
+	admin.PUT("/park", parkingHandler.Update)
 	admin.DELETE("/park/:num", parkingHandler.Delete)
 	admin.GET("/users", userHandler.GetAll)
 	admin.GET("/users/:username", userHandler.Get)
-	admin.PUT("/users/:username", userHandler.Update)
+	admin.PUT("/users", userHandler.Update)
 	admin.DELETE("/users/:username", userHandler.Delete)
 	admin.POST("/park", parkingHandler.Add)
 	user := e.Group("/user")
