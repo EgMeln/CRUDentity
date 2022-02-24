@@ -70,7 +70,7 @@ func (handler *UserHandler) SignIn(e echo.Context) error {
 // @Failure 400 {string} echo.NewHTTPError
 // @Failure 500 {string} echo.NewHTTPError
 // @Router /auth/sign-up [post]
-func (handler *UserHandler) Add(e echo.Context) error {
+func (handler *UserHandler) Add(e echo.Context) error { //nolint:dupl //Different business logic
 	user := new(request.SignUpUser)
 	if err := e.Bind(user); err != nil {
 		log.Warnf("Bind fail %v", err)
@@ -136,7 +136,7 @@ func (handler *UserHandler) Get(e echo.Context) error {
 // @Failure 400 {string} echo.NewHTTPError
 // @Failure 500 {string} echo.NewHTTPError
 // @Router /admin/users [put]
-func (handler *UserHandler) Update(e echo.Context) error {
+func (handler *UserHandler) Update(e echo.Context) error { //nolint:dupl //Different business logic
 	c := new(request.UpdateUser)
 	if err := e.Bind(c); err != nil {
 		log.Warnf("Bind fail %v", err)

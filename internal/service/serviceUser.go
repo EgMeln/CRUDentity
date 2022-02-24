@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository"
 	"golang.org/x/crypto/bcrypt"

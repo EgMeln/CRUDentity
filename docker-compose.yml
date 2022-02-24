@@ -5,6 +5,12 @@ services:
     image: crud
     ports:
       - "8080:8080"
+    environment:
+      REDIS_ADDR: "redis:6379"
+  flyway:
+    image: flyway/flyway
+    command:
+      - url =jdbc:postgresql://localhost:5444/egormelnikov
   postgres:
     container_name: parking
     image: postgres
@@ -12,7 +18,6 @@ services:
       POSTGRES_DB: "egormelnikovdb"
       POSTGRES_USER: "egormelnikov"
       POSTGRES_PASSWORD: "54236305"
-      REDIS_ADDR: "redis:6379"
     ports:
       - "5444:5432"
   mongo:
