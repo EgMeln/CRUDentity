@@ -32,7 +32,7 @@ func (srv *UserService) Add(e context.Context, user *model.User) error {
 	}
 	user.Password = string(hashedPass)
 
-	_, err := srv.conn.Get(e, user.Username)
+	_, err := srv.conn.Get(e, user)
 	if err != nil {
 		return srv.conn.Add(e, user)
 	}
@@ -46,11 +46,11 @@ func (srv *UserService) GetAll(e context.Context) ([]*model.User, error) {
 
 // Get getting parking lot by username
 func (srv *UserService) Get(e context.Context, user *model.User) (*model.User, error) {
-	getUser, err := srv.conn.Get(e, user.Username)
+	getUser, err := srv.conn.Get(e, user)
 	if err != nil {
 		return nil, err
 	}
-	if ok := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(user.Password)); ok != nil {
+	if ok := bcrypt.CompareHashAndPassword([]byte(getUser.Password), []byte(user.Password)); ok != nil && user.Password != "" {
 		return nil, fmt.Errorf("authentication comparing passwords error %v", ok)
 	}
 	return getUser, err

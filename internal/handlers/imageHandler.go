@@ -14,11 +14,23 @@ type ImageHandler struct {
 }
 
 // Download an image from file system
+// @Summary download image from file system
+// @ID download-image
+// @Produce json
+// @Failure 400 {string} string
+// @Router /downloadImage/{name} [get]
 func (handler *ImageHandler) Download(e echo.Context) error {
 	return e.Attachment(handler.service.Download(e.Request().Context()).Filename, "image")
 }
 
 // Upload an image in file system
+// @Summary upload image in file system
+// @ID upload-image
+// @Produce json
+// @Param image path string true "upload image"
+// @Success 200 {string} string
+// @Failure 400 {string} echo.NewHTTPError
+// @Router /uploadImage/{image} [post]
 func (handler *ImageHandler) Upload(e echo.Context) error {
 	images, err := e.FormFile("image")
 	if err != nil {

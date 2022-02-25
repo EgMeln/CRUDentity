@@ -5,6 +5,12 @@ services:
     image: crud
     ports:
       - "8080:8080"
+    environment:
+      REDIS_ADDR: "redis:6379"
+  flyway:
+    image: flyway/flyway
+    command:
+      - url =jdbc:postgresql://localhost:5444/egormelnikov
   postgres:
     container_name: parking
     image: postgres
@@ -21,3 +27,7 @@ services:
       -MONGO_INITDB_DATABASE: "egormelnikovdb"
     ports:
       - "27072:27017"
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"

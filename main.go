@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"time"
 
+	_ "github.com/EgMeln/CRUDentity/docs"
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/handlers"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
@@ -14,14 +14,28 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/EgMeln/CRUDentity/internal/validation"
 	"github.com/go-playground/validator"
+	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	log "github.com/sirupsen/logrus"
+	swaggerFiles "github.com/swaggo/echo-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+// @title CRUD entity API
+// @version 1.0
+// @description CRUD entity API for Golang Project Parking.
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
 func main() {
 	initLog()
 
@@ -32,15 +46,23 @@ func main() {
 	access := service.NewJWTService([]byte(cfg.AccessToken), time.Duration(cfg.AccessTokenLifeTime)*time.Second)
 	refresh := service.NewJWTService([]byte(cfg.RefreshToken), time.Duration(cfg.RefreshTokenLifeTime)*time.Second)
 
+	redisCfg, err := config.NewRedis()
+	if err != nil {
+		log.Warnf("redis config error: %v", err)
+	}
+	rdb := redis.NewClient(&redis.Options{Addr: redisCfg.Addr, Password: redisCfg.Password, DB: redisCfg.DB})
+
 	var parkingService *service.ParkingService
 	var userService *service.UserService
 	var authenticationService *service.AuthenticationService
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	switch cfg.DB {
 	case "postgres":
 		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Infof("DB URL: %s", cfg.DBURL)
 		pool := connectPostgres(cfg.DBURL)
-		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool})
+		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool}, repository.NewParkingLotCache(ctx, rdb))
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: pool})
 		authenticationService = service.NewAuthServicePostgres(&repository.PostgresToken{PoolToken: pool}, access, refresh, cfg.HashSalt)
 	case "mongodb":
@@ -52,7 +74,7 @@ func main() {
 				log.Warnf("Error connection to DB %v", err)
 			}
 		}()
-		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")})
+		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: db.Collection("egormelnikov")}, repository.NewParkingLotCache(ctx, rdb))
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: db.Collection("users")})
 		repMongoTokens := &repository.MongoToken{CollectionTokens: db.Collection("tokens")}
 		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)
@@ -82,11 +104,9 @@ func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
 }
 func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.UserHandler, fileHandler *handlers.ImageHandler, cfg *config.Config) *echo.Echo {
 	e := echo.New()
+	e.GET("/swagger/*any", swaggerFiles.WrapHandler)
 	e.Validator = &validation.CustomValidator{Validator: validator.New()}
 
-	e.GET("/", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
 	e.POST("/auth/sign-in", userHandler.SignIn)
 	e.POST("/auth/sign-up", userHandler.Add)
 	admin := e.Group("/admin")
@@ -94,13 +114,13 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	admin.Use(middleware.JWTWithConfig(configuration))
 	admin.Use(middlewares.CheckAccess)
 
-	admin.POST("/park", parkingHandler.Add)
-	admin.PUT("/park/:num", parkingHandler.Update)
+	admin.PUT("/park", parkingHandler.Update)
 	admin.DELETE("/park/:num", parkingHandler.Delete)
 	admin.GET("/users", userHandler.GetAll)
 	admin.GET("/users/:username", userHandler.Get)
-	admin.PUT("/users/:username", userHandler.Update)
+	admin.PUT("/users", userHandler.Update)
 	admin.DELETE("/users/:username", userHandler.Delete)
+	admin.POST("/park", parkingHandler.Add)
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
 

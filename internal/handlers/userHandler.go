@@ -24,6 +24,14 @@ func NewServiceUser(srvUser *service.UserService, srvAuth *service.Authenticatio
 }
 
 // SignIn generate token
+// @Summary sign-in
+// @ID sign-in-user
+// @Produce json
+// @Param request body request.SignInUser true "sign in user"
+// @Success 200 {object} request.SignInUser
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /auth/sign-in [post]
 func (handler *UserHandler) SignIn(e echo.Context) error {
 	user := new(request.SignInUser)
 
@@ -54,7 +62,15 @@ func (handler *UserHandler) SignIn(e echo.Context) error {
 }
 
 // Add record about user
-func (handler *UserHandler) Add(e echo.Context) error {
+// @Summary add user
+// @ID add-user
+// @Produce json
+// @Param request body request.SignUpUser true "sign up user"
+// @Success 200 {object} request.SignUpUser
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /auth/sign-up [post]
+func (handler *UserHandler) Add(e echo.Context) error { //nolint:dupl //Different business logic
 	user := new(request.SignUpUser)
 	if err := e.Bind(user); err != nil {
 		log.Warnf("Bind fail %v", err)
@@ -73,6 +89,13 @@ func (handler *UserHandler) Add(e echo.Context) error {
 }
 
 // GetAll getting all users
+// @Summary gets all users
+// @ID get-all-users
+// @Security ApiKeyAuth
+// @Produce json
+// @Success 200 {array} model.User
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/users [get]
 func (handler *UserHandler) GetAll(e echo.Context) error {
 	users, err := handler.userService.GetAll(e.Request().Context())
 	if err != nil {
@@ -82,16 +105,20 @@ func (handler *UserHandler) GetAll(e echo.Context) error {
 	return e.JSON(http.StatusOK, users)
 }
 
-// Get getting parking lot by username
+// Get getting user by username
+// @Summary get user by username
+// @ID get-user-by-username
+// @Security ApiKeyAuth
+// @Produce json
+// @Param username path string true "get user"
+// @Success 200 {object} request.GetUser
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/users/{username} [get]
 func (handler *UserHandler) Get(e echo.Context) error {
 	username := e.Param("username")
-	var user *request.GetUser
 	var err error
-	if ok := e.Bind(user); ok != nil {
-		log.Warnf("Bind fail %v", err)
-		return echo.NewHTTPError(http.StatusBadRequest)
-	}
-	getUser, err := handler.userService.Get(e.Request().Context(), &model.User{Username: username, Password: user.Password})
+	getUser, err := handler.userService.Get(e.Request().Context(), &model.User{Username: username})
 	if err != nil {
 		log.Warnf("Get user error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, getUser)
@@ -100,8 +127,16 @@ func (handler *UserHandler) Get(e echo.Context) error {
 }
 
 // Update updating user
-func (handler *UserHandler) Update(e echo.Context) error {
-	username := e.Param("username")
+// @Summary update user by username
+// @ID update-user-by-username
+// @Security ApiKeyAuth
+// @Produce json
+// @Param request body request.UpdateUser true "update user"
+// @Success 200 {object} request.UpdateUser
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/users [put]
+func (handler *UserHandler) Update(e echo.Context) error { //nolint:dupl //Different business logic
 	c := new(request.UpdateUser)
 	if err := e.Bind(c); err != nil {
 		log.Warnf("Bind fail %v", err)
@@ -111,7 +146,7 @@ func (handler *UserHandler) Update(e echo.Context) error {
 		log.Warnf("Validation error: %v", err)
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	err := handler.userService.Update(e.Request().Context(), &model.User{Username: username, Password: c.Password})
+	err := handler.userService.Update(e.Request().Context(), &model.User{Username: c.Username, Password: c.Password})
 	if err != nil {
 		log.Warnf("Update user error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, c)
@@ -120,6 +155,14 @@ func (handler *UserHandler) Update(e echo.Context) error {
 }
 
 // Delete deleting user
+// @Summary delete user by username
+// @ID delete-user-by-username
+// @Security ApiKeyAuth
+// @Produce json
+// @Param username path string true "update user"
+// @Success 200 {string} echo.Context
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /admin/users/{username} [delete]
 func (handler *UserHandler) Delete(e echo.Context) error {
 	username := e.Param("username")
 	err := handler.userService.Delete(e.Request().Context(), username)
@@ -131,6 +174,15 @@ func (handler *UserHandler) Delete(e echo.Context) error {
 }
 
 // Refresh generating a new refresh token
+// @Summary refresh token
+// @ID refresh-token
+// @Security ApiKeyAuth
+// @Produce json
+// @Param request body request.RefreshToken true "refresh token"
+// @Success 200 {string} string
+// @Failure 400 {string} echo.NewHTTPError
+// @Failure 500 {string} echo.NewHTTPError
+// @Router /user/refresh [post]
 func (handler *UserHandler) Refresh(e echo.Context) error {
 	user := new(request.RefreshToken)
 	if err := e.Bind(user); err != nil {

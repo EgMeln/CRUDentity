@@ -1,0 +1,442 @@
+basePath: /
+definitions:
+  model.ParkingLot:
+    properties:
+      in_parking:
+        type: boolean
+      num:
+        type: integer
+      remark:
+        type: string
+    type: object
+  model.User:
+    properties:
+      admin:
+        type: boolean
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  request.GetUser:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  request.ParkingLotCreate:
+    properties:
+      in_parking:
+        type: boolean
+      num:
+        type: integer
+      remark:
+        type: string
+    required:
+    - num
+    type: object
+  request.ParkingLotUpdate:
+    properties:
+      in_parking:
+        type: boolean
+      num:
+        type: integer
+      remark:
+        type: string
+    required:
+    - num
+    type: object
+  request.RefreshToken:
+    properties:
+      username:
+        type: string
+    required:
+    - username
+    type: object
+  request.SignInUser:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  request.SignUpUser:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  request.UpdateUser:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: CRUD entity API for Golang Project Parking.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: CRUD entity API
+  version: "1.0"
+paths:
+  /admin/park:
+    post:
+      operationId: add-parkingLot
+      parameters:
+      - description: create parking lot
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParkingLotCreate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.ParkingLotCreate'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: add parking lot
+    put:
+      operationId: update-parkingLot-by-num
+      parameters:
+      - description: update parking lot
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.ParkingLotUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.ParkingLotUpdate'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: update parking lot by num
+  /admin/park/{num}:
+    delete:
+      operationId: delete-parkingLot-by-num
+      parameters:
+      - description: delete parking lot
+        in: path
+        name: num
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: delete parking lot by num
+  /admin/users:
+    get:
+      operationId: get-all-users
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.User'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: gets all users
+    put:
+      operationId: update-user-by-username
+      parameters:
+      - description: update user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.UpdateUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.UpdateUser'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: update user by username
+  /admin/users/{username}:
+    delete:
+      operationId: delete-user-by-username
+      parameters:
+      - description: update user
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: delete user by username
+    get:
+      operationId: get-user-by-username
+      parameters:
+      - description: get user
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.GetUser'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: get user by username
+  /auth/sign-in:
+    post:
+      operationId: sign-in-user
+      parameters:
+      - description: sign in user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.SignInUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.SignInUser'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: sign-in
+  /auth/sign-up:
+    post:
+      operationId: add-user
+      parameters:
+      - description: sign up user
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.SignUpUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/request.SignUpUser'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: add user
+  /downloadImage/{name}:
+    get:
+      operationId: download-image
+      produces:
+      - application/json
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: download image from file system
+  /uploadImage/{name}:
+    post:
+      operationId: upload-image
+      parameters:
+      - description: upload image
+        in: path
+        name: image
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: upload image in file system
+  /user/park:
+    get:
+      operationId: get-all-parkingLots
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.ParkingLot'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            items:
+              $ref: '#/definitions/model.ParkingLot'
+            type: array
+      security:
+      - ApiKeyAuth: []
+      summary: gets all parking lots
+  /user/park/{num}:
+    get:
+      operationId: get-parkingLot-by-num
+      parameters:
+      - description: get parking lot
+        in: path
+        name: num
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ParkingLot'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: get parking lot by num
+  /user/refresh:
+    post:
+      operationId: refresh-token
+      parameters:
+      - description: refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/request.RefreshToken'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      security:
+      - ApiKeyAuth: []
+      summary: refresh token
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

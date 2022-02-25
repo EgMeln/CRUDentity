@@ -41,13 +41,13 @@ func (rep *PostgresUser) GetAll(e context.Context) ([]*model.User, error) {
 }
 
 // Get function for getting user by username from a sql table
-func (rep *PostgresUser) Get(e context.Context, username string) (*model.User, error) {
-	var user model.User
-	err := rep.PoolUser.QueryRow(e, "SELECT username,password,admin from users where username=$1", username).Scan(&user.Username, &user.Password, &user.Admin)
+func (rep *PostgresUser) Get(e context.Context, user *model.User) (*model.User, error) {
+	var userGet model.User
+	err := rep.PoolUser.QueryRow(e, "SELECT username,password,admin from users where username=$1", user.Username).Scan(&userGet.Username, &userGet.Password, &userGet.Admin)
 	if err != nil {
 		return nil, fmt.Errorf("can't select parking lot %w", err)
 	}
-	return &user, err
+	return &userGet, err
 }
 
 // Update function for updating user from a sql table
