@@ -52,10 +52,10 @@ func (red *ParkingLotCache) Add(e context.Context, lot *model.ParkingLot) error 
 // GetByNum getting parking lot cache by num
 func (red *ParkingLotCache) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
 	red.mu.Lock()
-	parkingLot, err := red.parkingMap[num]
+	parkingLot, ok := red.parkingMap[num]
 	red.mu.Unlock()
-	if !err {
-		return nil, fmt.Errorf("redis get parking lot cache error %v", err)
+	if !ok {
+		return nil, fmt.Errorf("redis get parking lot cache error %v", ok)
 	}
 	return parkingLot, nil
 }
