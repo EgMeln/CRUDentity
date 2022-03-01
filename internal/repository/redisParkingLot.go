@@ -80,7 +80,7 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			return
 		default:
 			streams, err := red.client.XRead(context.Background(), &redis.XReadArgs{
-				Streams: []string{red.redisStream, "$"},
+				Streams: []string{red.redisStream, "0-0"},
 				Count:   1,
 				Block:   0,
 			}).Result()

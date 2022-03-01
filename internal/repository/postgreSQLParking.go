@@ -9,7 +9,7 @@ import (
 
 // Add function for inserting a parking lot into sql table
 func (rep *PostgresParking) Add(e context.Context, lot *model.ParkingLot) error {
-	_, err := rep.PoolParking.Exec(e, "INSERT INTO parking (num,inparking,remark) VALUES ($1,$2,$3)", lot.Num, lot.InParking, lot.Remark)
+	_, err := rep.PoolParking.Exec(e, "INSERT INTO parking (_id,num,inparking,remark) VALUES ($1,$2,$3,$4)", lot.ID, lot.Num, lot.InParking, lot.Remark)
 	if err != nil {
 		return fmt.Errorf("can't create parking lot %w", err)
 	}
@@ -31,9 +31,10 @@ func (rep *PostgresParking) GetAll(e context.Context) ([]*model.ParkingLot, erro
 		if err != nil {
 			return lots, err
 		}
-		lot.Num = int(values[0].(int32))
-		lot.InParking = values[1].(bool)
-		lot.Remark = values[2].(string)
+		lot.ID = values[0].([16]uint8)
+		lot.Num = int(values[1].(int32))
+		lot.InParking = values[2].(bool)
+		lot.Remark = values[3].(string)
 		lots = append(lots, &lot)
 	}
 	return lots, err
@@ -42,7 +43,7 @@ func (rep *PostgresParking) GetAll(e context.Context) ([]*model.ParkingLot, erro
 // GetByNum function for getting parking lot by num from a sql table
 func (rep *PostgresParking) GetByNum(e context.Context, num int) (*model.ParkingLot, error) {
 	var lot model.ParkingLot
-	err := rep.PoolParking.QueryRow(e, "SELECT num,inparking, remark from parking where num=$1", num).Scan(&lot.Num, &lot.InParking, &lot.Remark)
+	err := rep.PoolParking.QueryRow(e, "SELECT _id,num,inparking, remark from parking where num=$1", num).Scan(&lot.ID, &lot.Num, &lot.InParking, &lot.Remark)
 	if err != nil {
 		return nil, fmt.Errorf("can't select parking lot %w", err)
 	}
