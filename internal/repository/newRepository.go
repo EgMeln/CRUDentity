@@ -68,3 +68,10 @@ type Tokens interface {
 	Get(e context.Context, username string) (string, error)
 	Delete(e context.Context, username string) error
 }
+
+// ParkingLotCacheRedis struct for cache func
+type ParkingLotCacheRedis interface {
+	Add(e context.Context, lot *model.ParkingLot) error
+	GetByNum(e context.Context, num int) (*model.ParkingLot, error)
+	Delete(e context.Context, num int) error
+}

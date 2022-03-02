@@ -19,13 +19,6 @@ type ParkingLotCache struct {
 	mu          sync.RWMutex
 }
 
-// ParkingLotCacheRedis struct for cache func
-type ParkingLotCacheRedis interface {
-	Add(e context.Context, lot *model.ParkingLot) error
-	GetByNum(e context.Context, num int) (*model.ParkingLot, error)
-	Delete(e context.Context, num int) error
-}
-
 // NewParkingLotCache returns new instance of ParkingLotCache
 func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache {
 	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[int]*model.ParkingLot), mu: sync.RWMutex{}}

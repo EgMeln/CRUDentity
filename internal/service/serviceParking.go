@@ -24,6 +24,9 @@ func NewParkingLotServicePostgres(rep *repository.PostgresParking, red *reposito
 func NewParkingLotServiceMongo(rep *repository.MongoParking, red *repository.ParkingLotCache) *ParkingService {
 	return &ParkingService{conn: rep, redis: red}
 }
+func NewParkingLotService(rep repository.ParkingLots, red repository.ParkingLotCacheRedis) *ParkingService {
+	return &ParkingService{conn: rep, redis: red}
+}
 
 // Add record about parking lot
 func (srv *ParkingService) Add(e context.Context, lot *model.ParkingLot) error {
