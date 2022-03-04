@@ -124,7 +124,7 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 	user := e.Group("/user")
 	user.Use(middleware.JWTWithConfig(configuration))
 
-	user.POST("/refresh", userHandler.Refresh)
+	e.POST("/refresh", userHandler.Refresh)
 	user.GET("/park", parkingHandler.GetAll)
 
 	user.GET("/park/:num", parkingHandler.GetByNum)

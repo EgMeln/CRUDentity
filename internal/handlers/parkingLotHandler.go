@@ -63,7 +63,11 @@ func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 		log.Warnf("Get all parking lots error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, parkingLots)
 	}
-	return e.JSON(http.StatusOK, parkingLots)
+	var returnParkingLot []*request.ParkingLotsReturn
+	for i := range parkingLots {
+		returnParkingLot = append(returnParkingLot, &request.ParkingLotsReturn{Num: (parkingLots[i]).Num, InParking: (parkingLots[i]).InParking, Remark: (parkingLots[i]).Remark})
+	}
+	return e.JSON(http.StatusOK, returnParkingLot)
 }
 
 // GetByNum getting parking lot by num
@@ -88,7 +92,8 @@ func (handler *ParkingLotHandler) GetByNum(e echo.Context) error {
 		log.Warnf("Get by num parking lot error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, parkingLot)
 	}
-	return e.JSON(http.StatusOK, parkingLot)
+	returnParkingLot := &request.ParkingLotsReturn{Num: parkingLot.Num, InParking: parkingLot.InParking, Remark: parkingLot.Remark}
+	return e.JSON(http.StatusOK, returnParkingLot)
 }
 
 // Update updating parking lot
