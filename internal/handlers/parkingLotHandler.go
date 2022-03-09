@@ -63,7 +63,7 @@ func (handler *ParkingLotHandler) GetAll(e echo.Context) error {
 		log.Warnf("Get all parking lots error %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, parkingLots)
 	}
-	var returnParkingLot []*request.ParkingLotsReturn
+	returnParkingLot := make([]*request.ParkingLotsReturn, len(parkingLots))
 	for i := range parkingLots {
 		returnParkingLot = append(returnParkingLot, &request.ParkingLotsReturn{Num: (parkingLots[i]).Num, InParking: (parkingLots[i]).InParking, Remark: (parkingLots[i]).Remark})
 	}

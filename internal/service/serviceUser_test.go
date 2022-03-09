@@ -3,11 +3,12 @@ package service
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 type MyMockedUser struct {

@@ -3,6 +3,11 @@ package handlers
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"testing"
+	"time"
+
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
 	"github.com/EgMeln/CRUDentity/internal/repository"
@@ -16,14 +21,9 @@ import (
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	swaggerFiles "github.com/swaggo/echo-swagger"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"os"
-	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"testing"
 )
 
 var (
@@ -51,18 +51,23 @@ func TestMain(m *testing.M) {
 		log.Fatalf("can't create hash password for user")
 	}
 	_, err = postgresDB.Exec(context.Background(), "INSERT INTO users (username,password,is_admin) VALUES ($1,$2,$3)", "handler", string(hash), true)
-
+	if err != nil {
+		log.Fatalf("can't insert admin to db")
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	var parkingService *service.ParkingService
 	var userService *service.UserService
 	var authenticationService *service.AuthenticationService
 	switch cfg.DB {
 	case "postgres":
-		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: postgresDB}, repository.NewParkingLotCache(ctx, redisClient))
+		parkingService = service.NewParkingLotServicePostgres(
+			&repository.PostgresParking{PoolParking: postgresDB}, repository.NewParkingLotCache(ctx, redisClient))
 		userService = service.NewUserServicePostgres(&repository.PostgresUser{PoolUser: postgresDB})
-		authenticationService = service.NewAuthServicePostgres(&repository.PostgresToken{PoolToken: postgresDB}, access, refresh, cfg.HashSalt)
+		authenticationService = service.NewAuthServicePostgres(
+			&repository.PostgresToken{PoolToken: postgresDB}, access, refresh, cfg.HashSalt)
 	case "mongodb":
-		parkingService = service.NewParkingLotServiceMongo(&repository.MongoParking{CollectionParkingLot: dbClient.Database("egormelnikovdb").Collection("egormelnikov")}, repository.NewParkingLotCache(ctx, redisClient))
+		parkingService = service.NewParkingLotServiceMongo(
+			&repository.MongoParking{CollectionParkingLot: dbClient.Database("egormelnikovdb").Collection("egormelnikov")}, repository.NewParkingLotCache(ctx, redisClient))
 		userService = service.NewUserServiceMongo(&repository.MongoUser{CollectionUsers: dbClient.Database("egormelnikovdb").Collection("users")})
 		repMongoTokens := &repository.MongoToken{CollectionTokens: dbClient.Database("egormelnikovdb").Collection("tokens")}
 		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)

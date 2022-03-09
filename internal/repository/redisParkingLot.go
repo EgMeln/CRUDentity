@@ -82,6 +82,7 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			}
 			if streams[0].Messages == nil {
 				log.Warn("empty message")
+				continue
 			}
 			stream := streams[0].Messages[0].Values
 			num, err := strconv.Atoi(stream["num"].(string))

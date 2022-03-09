@@ -24,6 +24,7 @@ func NewUserServiceMongo(rep *repository.MongoUser) *UserService {
 	return &UserService{conn: rep}
 }
 
+// NewUserService used for setting tests services
 func NewUserService(r repository.Users) *UserService {
 	return &UserService{conn: r}
 }

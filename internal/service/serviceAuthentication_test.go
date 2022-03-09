@@ -2,24 +2,25 @@ package service
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/EgMeln/CRUDentity/internal/config"
 	"github.com/EgMeln/CRUDentity/internal/model"
 	"github.com/EgMeln/CRUDentity/internal/repository/mocks"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 type MyMockedAuth struct {
-	authUser mocks.Authentication
-	token    mocks.Tokens
+	token mocks.Tokens
 }
 
 func TestAuthenticationService_SignIn(t *testing.T) {
 	testAuth := new(MyMockedAuth)
 	user := &model.User{Username: "test", Password: "1234", Admin: false}
 	cfg, err := config.New()
+	require.NoError(t, err)
 	testAuth.token.On("Delete", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string")).Return(
 		func(e context.Context, username string) error {
 			return nil
@@ -40,6 +41,7 @@ func TestAuthenticationService_RefreshToken(t *testing.T) {
 	testAuth := new(MyMockedAuth)
 	user := &model.User{Username: "test", Password: "1234", Admin: false}
 	cfg, err := config.New()
+	require.NoError(t, err)
 	testAuth.token.On("Delete", mock.AnythingOfType("*context.emptyCtx"), mock.AnythingOfType("string")).Return(
 		func(e context.Context, username string) error {
 			return nil
