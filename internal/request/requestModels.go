@@ -43,3 +43,10 @@ type GetUser struct {
 	Username string `json:"username" form:"username" validate:"required"`
 	Password string `json:"password" form:"password" validate:"required"`
 }
+
+// ParkingLotsReturn struct that contain record info,which will be recorded when returning parking lots
+type ParkingLotsReturn struct {
+	Num       int    `json:"num" form:"num" validate:"required"`
+	InParking bool   `json:"in_parking" form:"in_parking"`
+	Remark    string `json:"remark" form:"remark"`
+}

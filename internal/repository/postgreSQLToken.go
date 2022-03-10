@@ -10,7 +10,7 @@ import (
 
 // Add function for inserting a token into sql table
 func (rep *PostgresToken) Add(e context.Context, token *model.Token) error {
-	_, err := rep.PoolToken.Exec(e, "INSERT INTO tokens (username,admin,token) VALUES ($1,$2,$3)", token.Username, token.RefreshToken)
+	_, err := rep.PoolToken.Exec(e, "INSERT INTO tokens (username,token) VALUES ($1,$2)", token.Username, token.RefreshToken)
 
 	if err != nil {
 		return fmt.Errorf("can't create user %w", err)
@@ -21,7 +21,7 @@ func (rep *PostgresToken) Add(e context.Context, token *model.Token) error {
 // Get function for getting token from a sql table
 func (rep *PostgresToken) Get(e context.Context, username string) (string, error) {
 	var token model.Token
-	err := rep.PoolToken.QueryRow(e, "SELECT username,admin,token from tokens where username=$1", username).Scan(&token.Username, &token.RefreshToken)
+	err := rep.PoolToken.QueryRow(e, "SELECT username,token from tokens where username=$1", username).Scan(&token.Username, &token.RefreshToken)
 	if err == mongo.ErrNoDocuments {
 		return "", fmt.Errorf("record doesn't exist %w", err)
 	} else if err != nil {

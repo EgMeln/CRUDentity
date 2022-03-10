@@ -25,6 +25,11 @@ func NewParkingLotServiceMongo(rep *repository.MongoParking, red *repository.Par
 	return &ParkingService{conn: rep, redis: red}
 }
 
+// NewParkingLotService used for setting tests services
+func NewParkingLotService(rep repository.ParkingLots, red repository.ParkingLotCacheRedis) *ParkingService {
+	return &ParkingService{conn: rep, redis: red}
+}
+
 // Add record about parking lot
 func (srv *ParkingService) Add(e context.Context, lot *model.ParkingLot) error {
 	err := srv.conn.Add(e, lot)

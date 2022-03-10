@@ -19,13 +19,6 @@ type ParkingLotCache struct {
 	mu          sync.RWMutex
 }
 
-// ParkingLotCacheRedis struct for cache func
-type ParkingLotCacheRedis interface {
-	Add(e context.Context, lot *model.ParkingLot) error
-	GetByNum(e context.Context, num int) (*model.ParkingLot, error)
-	Delete(e context.Context, num int) error
-}
-
 // NewParkingLotCache returns new instance of ParkingLotCache
 func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache {
 	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[int]*model.ParkingLot), mu: sync.RWMutex{}}
@@ -80,7 +73,7 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			return
 		default:
 			streams, err := red.client.XRead(context.Background(), &redis.XReadArgs{
-				Streams: []string{red.redisStream, "$"},
+				Streams: []string{red.redisStream, "0-0"},
 				Count:   1,
 				Block:   0,
 			}).Result()
@@ -89,6 +82,7 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			}
 			if streams[0].Messages == nil {
 				log.Warn("empty message")
+				continue
 			}
 			stream := streams[0].Messages[0].Values
 			num, err := strconv.Atoi(stream["num"].(string))

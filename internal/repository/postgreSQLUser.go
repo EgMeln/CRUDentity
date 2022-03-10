@@ -9,7 +9,7 @@ import (
 
 // Add function for inserting a user into sql table
 func (rep *PostgresUser) Add(e context.Context, user *model.User) error {
-	_, err := rep.PoolUser.Exec(e, "INSERT INTO users (username,password,admin) VALUES ($1,$2,$3)", user.Username, user.Password, user.Admin)
+	_, err := rep.PoolUser.Exec(e, "INSERT INTO users (username,password,is_admin) VALUES ($1,$2,$3)", user.Username, user.Password, user.Admin)
 	if err != nil {
 		return fmt.Errorf("can't create user %w", err)
 	}
@@ -43,7 +43,7 @@ func (rep *PostgresUser) GetAll(e context.Context) ([]*model.User, error) {
 // Get function for getting user by username from a sql table
 func (rep *PostgresUser) Get(e context.Context, user *model.User) (*model.User, error) {
 	var userGet model.User
-	err := rep.PoolUser.QueryRow(e, "SELECT username,password,admin from users where username=$1", user.Username).Scan(&userGet.Username, &userGet.Password, &userGet.Admin)
+	err := rep.PoolUser.QueryRow(e, "SELECT username,password,is_admin from users where username=$1", user.Username).Scan(&userGet.Username, &userGet.Password, &userGet.Admin)
 	if err != nil {
 		return nil, fmt.Errorf("can't select parking lot %w", err)
 	}
@@ -52,7 +52,7 @@ func (rep *PostgresUser) Get(e context.Context, user *model.User) (*model.User, 
 
 // Update function for updating user from a sql table
 func (rep *PostgresUser) Update(e context.Context, user *model.User) error {
-	_, err := rep.PoolUser.Exec(e, "UPDATE users SET password =$1,admin =$2 WHERE username = $3", user.Password, user.Admin, user.Username)
+	_, err := rep.PoolUser.Exec(e, "UPDATE users SET password =$1,is_admin =$2 WHERE username = $3", user.Password, user.Admin, user.Username)
 	if err != nil {
 		return fmt.Errorf("can't update parking lot %w", err)
 	}

@@ -58,7 +58,7 @@ func (handler *UserHandler) SignIn(e echo.Context) error {
 		log.Warnf("Tokens generate error: %v", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
-	return e.JSON(http.StatusOK, fmt.Sprintf("access token: %s, refresh token: %s", accessToken, refreshToken))
+	return e.String(http.StatusOK, fmt.Sprintf("access token: %s , refresh token: %s", accessToken, refreshToken))
 }
 
 // Add record about user
@@ -199,5 +199,5 @@ func (handler *UserHandler) Refresh(e echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, user)
 	}
 
-	return e.JSON(http.StatusOK, fmt.Sprintf("new access token: %s, new refresh token: %s", accessToken, refreshToken))
+	return e.String(http.StatusOK, fmt.Sprintf("new access token: %s , new refresh token: %s", accessToken, refreshToken))
 }

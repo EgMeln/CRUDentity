@@ -20,7 +20,11 @@ type ImageHandler struct {
 // @Failure 400 {string} string
 // @Router /downloadImage/{name} [get]
 func (handler *ImageHandler) Download(e echo.Context) error {
-	return e.Attachment(handler.service.Download(e.Request().Context()).Filename, "image")
+	image, err := handler.service.Download(e.Request().Context())
+	if err != nil {
+		log.Warnf("can't download file %v", err)
+	}
+	return e.Attachment(image.Filename, "image")
 }
 
 // Upload an image in file system

@@ -37,6 +37,11 @@ func NewAuthServiceMongo(rep2 *repository.MongoToken, access, refresh *JWTServic
 	return &AuthenticationService{token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
 }
 
+// NewAuthService used for setting mongo services
+func NewAuthService(rep2 repository.Tokens, access, refresh *JWTService, hashSalt string) *AuthenticationService {
+	return &AuthenticationService{token: rep2, accessToken: access, refreshToken: refresh, hashSalt: hashSalt}
+}
+
 // NewJWTService used for token setting mongo services
 func NewJWTService(key []byte, tokenLifeTime time.Duration) *JWTService {
 	return &JWTService{Key: key, TokenLifeTime: tokenLifeTime}

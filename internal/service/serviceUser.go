@@ -24,6 +24,11 @@ func NewUserServiceMongo(rep *repository.MongoUser) *UserService {
 	return &UserService{conn: rep}
 }
 
+// NewUserService used for setting tests services
+func NewUserService(r repository.Users) *UserService {
+	return &UserService{conn: r}
+}
+
 // Add record about user
 func (srv *UserService) Add(e context.Context, user *model.User) error {
 	hashedPass, ok := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)

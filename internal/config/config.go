@@ -7,8 +7,8 @@ import (
 
 // Config struct to config env
 type Config struct {
-	DB string `env:"DB" envDefault:"mongodb"`
-	// DB string `env:"DB" envDefault:"postgres"`
+	//DB string `env:"DB" envDefault:"mongodb"`
+	DB             string `env:"DB" envDefault:"postgres"`
 	User           string `env:"USER" envDefault:"egormelnikov"`
 	Password       string `env:"PASSWORD" envDefault:"54236305"`
 	Host           string `env:"HOST" envDefault:"postgres"`
