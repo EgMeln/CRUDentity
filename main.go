@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"time"
 
@@ -11,8 +12,10 @@ import (
 	"github.com/EgMeln/CRUDentity/internal/handlers"
 	"github.com/EgMeln/CRUDentity/internal/middlewares"
 	"github.com/EgMeln/CRUDentity/internal/repository"
+	"github.com/EgMeln/CRUDentity/internal/server"
 	"github.com/EgMeln/CRUDentity/internal/service"
 	"github.com/EgMeln/CRUDentity/internal/validation"
+	"github.com/EgMeln/CRUDentity/protocol"
 	"github.com/go-playground/validator"
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -22,6 +25,7 @@ import (
 	swaggerFiles "github.com/swaggo/echo-swagger"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"google.golang.org/grpc"
 )
 
 // @title CRUD entity API
@@ -59,7 +63,7 @@ func main() {
 	defer cancel()
 	switch cfg.DB {
 	case "postgres":
-		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, cfg.Host, cfg.PortPostgres, cfg.DBNamePostgres)
+		cfg.DBURL = fmt.Sprintf("%s://%s:%s@%s:%d/%s", cfg.DB, cfg.User, cfg.Password, "localhost", cfg.PortPostgres, cfg.DBNamePostgres)
 		log.Infof("DB URL: %s", cfg.DBURL)
 		pool := connectPostgres(cfg.DBURL)
 		parkingService = service.NewParkingLotServicePostgres(&repository.PostgresParking{PoolParking: pool}, repository.NewParkingLotCache(ctx, rdb))
@@ -80,18 +84,25 @@ func main() {
 		authenticationService = service.NewAuthServiceMongo(repMongoTokens, access, refresh, cfg.HashSalt)
 	}
 
-	parkingHandler := handlers.NewServiceParkingLot(parkingService)
-	userHandler := handlers.NewServiceUser(userService, authenticationService)
-	fileHandler := handlers.ImageHandler{}
-
-	runEcho(&parkingHandler, &userHandler, &fileHandler, cfg)
+	switch cfg.Server {
+	case "echo":
+		parkingHandler := handlers.NewServiceParkingLot(parkingService)
+		userHandler := handlers.NewServiceUser(userService, authenticationService)
+		fileHandler := handlers.ImageHandler{}
+		runEcho(&parkingHandler, &userHandler, &fileHandler, cfg)
+	case "grpc":
+		imageStore := service.NewDiskImageStore("client")
+		parkingServer := server.NewParkingServer(parkingService)
+		userServer := server.NewUserServer(userService, authenticationService, imageStore)
+		err = runGRPC(parkingServer, userServer, access, refresh)
+	}
+	log.Info("HTTP server terminated", err)
 }
 func connectPostgres(URL string) *pgxpool.Pool {
 	pool, err := pgxpool.Connect(context.Background(), URL)
 	if err != nil {
 		log.Warnf("Error connection to DB %v", err)
 	}
-	defer pool.Close()
 	return pool
 }
 func connectMongo(URL, DBName string) (*mongo.Client, *mongo.Database) {
@@ -136,6 +147,29 @@ func runEcho(parkingHandler *handlers.ParkingLotHandler, userHandler *handlers.U
 
 	e.Logger.Fatal(e.Start(":8080"))
 	return e
+}
+func runGRPC(parkingServer protocol.ParkingServiceServer, userServer protocol.UserServiceServer, access, refresh *service.JWTService) error {
+	listener, err := net.Listen("tcp", ":50005")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	interceptors := server.NewAuthInterceptor(access, refresh)
+
+	serverOptions := []grpc.ServerOption{
+		grpc.UnaryInterceptor(interceptors.UnaryServerAuthInterceptor()),
+		grpc.StreamInterceptor(interceptors.StreamServerAuthInterceptor()),
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
+
+	protocol.RegisterUserServiceServer(grpcServer, userServer)
+	protocol.RegisterParkingServiceServer(grpcServer, parkingServer)
+
+	log.Printf("server listening at %v", listener.Addr())
+	err = grpcServer.Serve(listener)
+	if err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
+	return grpcServer.Serve(listener)
 }
 func initLog() {
 	log.SetFormatter(&log.JSONFormatter{})
