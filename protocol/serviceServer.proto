@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package protobuf;
+
+option go_package = "./protocol";
+
+message User {
+  // @inject_tag: validate:"required"
+  string username = 1;
+  // @inject_tag: validate:"required"
+  string password = 2;
+  bool is_admin = 3;
+}
+message ParkingLot{
+  // @inject_tag: validate:"required"
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+  string id = 4;
+}
+message Tokens {
+  string access = 1;
+  string refresh = 2;
+}
+service UserService{
+  rpc SignIn(SignInUserRequest) returns (Tokens){}
+  rpc AddUser(SignUpUserRequest) returns (SignUpUserResponse){}
+  rpc GetAllUser(Empty) returns (GetAllUsersResponse){}
+  rpc GetUser(GetUserRequest) returns(GetUserResponse){}
+  rpc UpdateUser(UpdateUserRequest) returns(UpdateUserResponse){}
+  rpc DeleteUser(DeleteUserRequest) returns(Empty){}
+  rpc RefreshToken(RefreshTokenRequest) returns(Tokens){}
+  rpc UploadImage(stream UploadImageRequest) returns (UploadImageResponse){}
+}
+message SignInUserRequest{
+  string username = 1;
+  string password = 2;
+}
+message SignUpUserRequest {
+  string username = 1;
+  string password = 2;
+}
+message SignUpUserResponse{
+  string username = 1;
+  string password = 2;
+}
+message GetAllUsersResponse{
+  repeated User user = 1;
+}
+message GetUserRequest{
+  string username = 1;
+}
+message GetUserResponse{
+  string username = 1;
+  string password = 2;
+  bool is_admin = 3;
+}
+message UpdateUserRequest{
+  string username = 1;
+  string password = 2;
+}
+message UpdateUserResponse{
+  string username = 1;
+  string password = 2;
+}
+message DeleteUserRequest{
+  string username = 1;
+}
+message RefreshTokenRequest{
+  string username = 1;
+}
+
+message UploadImageRequest {
+  oneof data  {
+    ImageInfo info = 1;
+    bytes chunk_data = 2;
+  };
+}
+
+message ImageInfo {
+  string image_type = 1;
+}
+message UploadImageResponse {
+  uint32 size = 1;
+}
+
+service ParkingService{
+  rpc AddParkingLot(CreateParkingLotRequest) returns(CreateParkingLotResponse){}
+  rpc GetAllParkingLot(Empty) returns (GetAllParkingLotsResponse){}
+  rpc GetParkingLot(GetParkingLotRequest) returns (GetParkingLotResponse){}
+  rpc UpdateParkingLot(UpdateParkingLotRequest) returns(UpdateParkingLotResponse){}
+  rpc DeleteParkingLot(DeleteParkingLotRequest) returns(Empty){}
+}
+message CreateParkingLotRequest{
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+}
+message CreateParkingLotResponse{
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+}
+message GetAllParkingLotsResponse{
+  repeated ParkingLot parkingLot = 1;
+}
+message GetParkingLotRequest{
+  int32  num = 1;
+}
+message GetParkingLotResponse{
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+}
+message UpdateParkingLotRequest{
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+}
+message UpdateParkingLotResponse{
+  int32 num = 1;
+  bool inParking = 2;
+  string remark = 3;
+}
+message DeleteParkingLotRequest{
+  int32 num = 1;
+}
+message Empty {
+
+}

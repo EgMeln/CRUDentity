@@ -16,12 +16,13 @@ type ParkingLotCache struct {
 	client      *redis.Client
 	parkingMap  map[int]*model.ParkingLot
 	redisStream string
+	lastID      string
 	mu          sync.RWMutex
 }
 
 // NewParkingLotCache returns new instance of ParkingLotCache
 func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache {
-	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[int]*model.ParkingLot), mu: sync.RWMutex{}}
+	red := &ParkingLotCache{client: cln, redisStream: "STREAM", parkingMap: make(map[int]*model.ParkingLot), mu: sync.RWMutex{}, lastID: "0-0"}
 	go red.StartProcessing(ctx)
 	return red
 }
@@ -30,6 +31,7 @@ func NewParkingLotCache(ctx context.Context, cln *redis.Client) *ParkingLotCache
 func (red *ParkingLotCache) Add(e context.Context, lot *model.ParkingLot) error {
 	err := red.client.XAdd(e, &redis.XAddArgs{
 		Stream: red.redisStream,
+		ID:     "",
 		Values: map[string]interface{}{
 			"num":        lot.Num,
 			"in_parking": lot.InParking,
@@ -73,17 +75,19 @@ func (red *ParkingLotCache) StartProcessing(ctx context.Context) {
 			return
 		default:
 			streams, err := red.client.XRead(context.Background(), &redis.XReadArgs{
-				Streams: []string{red.redisStream, "0-0"},
-				Count:   1,
+				Streams: []string{red.redisStream, red.lastID},
 				Block:   0,
+				Count:   1,
 			}).Result()
 			if err != nil {
 				log.Warnf("redis start process error %v", err)
+				continue
 			}
 			if streams[0].Messages == nil {
 				log.Warn("empty message")
 				continue
 			}
+			red.lastID = streams[0].Messages[0].ID
 			stream := streams[0].Messages[0].Values
 			num, err := strconv.Atoi(stream["num"].(string))
 			if err != nil {
